@@ -66,3 +66,18 @@ Esta matriz garantiza la regla del docente:
 | INF-10 | PostgreSQL vía Docker Compose | `[FASE 0]` | `docker compose ps` | `[OK]` |
 | INF-11 | Spring Boot mínimo + `/api/health` | `[FASE 0]` | `curl` / test HTTP | `[OK]` |
 | INF-12 | Angular mínimo compilando | `[FASE 0]` | `npm run build` | `[OK]` |
+
+---
+
+## Componentes de Fase 1 (Slice vertical: CREATE_CLASS)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F1-01 | GET `/api/projects/{projectId}/model` | `[FASE 1]` | `UmlProjectControllerTest` | `[OK]` |
+| F1-02 | POST `/api/projects/{projectId}/classes` | `[FASE 1]` | `CreateClassApiIT` | `[OK]` |
+| F1-03 | Persistencia PostgreSQL + Flyway | `[FASE 1]` | `JpaUmlModelRepositoryAdapterIT` | `[OK]` |
+| F1-04 | Concurrencia optimista (`@Version`) | `[FASE 1]` | `CreateClassTransactionalIT` | `[OK]` |
+| F1-05 | Publicación interna `AFTER_COMMIT` | `[FASE 1]` | `CreateClassTransactionalIT` | `[OK]` |
+| F1-06 | Broadcast STOMP a clientes | `[FASE 1]` | Demo manual A/B | `[OK]` |
+| F1-07 | Frontend Angular reactivo | `[FASE 1]` | Demo manual A/B | `[OK]` |
+| F1-08 | Persistencia comprobable tras F5 | `[FASE 1]` | Demo manual F5 | `[OK]` |

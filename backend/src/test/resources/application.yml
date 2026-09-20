@@ -11,3 +11,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+  # Flyway desactivado para tests con H2 (ddl-auto: create-drop)
+  # Los tests con Testcontainers usan @DynamicPropertySource para sobrescribir
+  flyway:
+    enabled: false

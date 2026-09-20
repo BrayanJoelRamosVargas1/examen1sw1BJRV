@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: umlcase
       POSTGRES_PASSWORD: umlcase
     ports:
-      - "5432:5432"
+      - "${UMLCASE_DB_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

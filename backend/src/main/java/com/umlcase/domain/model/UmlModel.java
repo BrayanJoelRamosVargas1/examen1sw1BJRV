@@ -27,18 +27,20 @@ public final class UmlModel {
 
     private final UUID id;
     private final UUID projectId;
+    private long version;
     private final List<UmlClass> classes;
     private final List<UmlRelationship> relationships;
 
-    public UmlModel(UUID id, UUID projectId) {
+    public UmlModel(UUID id, UUID projectId, long version) {
         this.id = Objects.requireNonNull(id, "id no puede ser null");
         this.projectId = Objects.requireNonNull(projectId, "projectId no puede ser null");
+        this.version = version;
         this.classes = new ArrayList<>();
         this.relationships = new ArrayList<>();
     }
 
     public static UmlModel create(UUID projectId) {
-        return new UmlModel(UUID.randomUUID(), projectId);
+        return new UmlModel(UUID.randomUUID(), projectId, 0L);
     }
 
     // ─── Operaciones de dominio ───────────────────────────────────────────────
@@ -106,6 +108,8 @@ public final class UmlModel {
 
     public UUID getId()        { return id; }
     public UUID getProjectId() { return projectId; }
+    public long getVersion()   { return version; }
+    public void setVersion(long version) { this.version = version; }
 
     public List<UmlClass> getClasses() {
         return Collections.unmodifiableList(classes);
