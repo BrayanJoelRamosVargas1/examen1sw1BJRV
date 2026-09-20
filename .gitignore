@@ -1,0 +1,33 @@
+# ─── IDEs ───────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── Angular / Node ──────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# ─── Spring Boot / Maven ─────────────────────────────────────────────────────
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+!backend/.mvn/wrapper/maven-wrapper.properties
+backend/*.log
+
+# ─── Environment secrets (NEVER commit) ─────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Docker ──────────────────────────────────────────────────────────────────
+# docker-compose.yml is tracked; volumes are not
+data/
+
+# ─── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

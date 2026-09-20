@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: umlcase-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: umlcase
+      POSTGRES_USER: umlcase
+      POSTGRES_PASSWORD: umlcase
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umlcase -d umlcase"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    name: umlcase_postgres_data

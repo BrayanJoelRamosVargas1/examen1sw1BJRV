@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: uml-case-backend
+
+  # ── Base de datos ───────────────────────────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:umlcase}
+    username: ${DB_USER:umlcase}
+    password: ${DB_PASSWORD:umlcase}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      # "validate" en prod: JPA valida el esquema contra la BD, no lo crea.
+      # "create-drop" en tests: H2 crea y destruye al terminar.
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# ── Servidor ─────────────────────────────────────────────────────────────────
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# ── CORS (Angular local en :4200) ─────────────────────────────────────────────
+# Configurado en CorsConfig.java, aquí solo el origen permitido en dev
+app:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:4200}

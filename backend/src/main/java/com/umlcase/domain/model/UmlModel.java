@@ -1,0 +1,134 @@
+package com.umlcase.domain.model;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * DOMINIO UML — Modelo UML canónico (semántico).
+ *
+ * Representa el estado semántico completo de un diagrama de clases UML.
+ * Contiene clases y relaciones. Es la fuente de verdad del dominio.
+ *
+ * [DECISIÓN DE DISEÑO] Esta clase no tiene posición visual (x, y).
+ * El layout visual vive en UmlDiagram. Ver ADR-002.
+ *
+ * [DECISIÓN DE DISEÑO] No tiene anotaciones JPA. Ver ADR-001.
+ *
+ * Preguntas orales esperadas:
+ *  - ¿Por qué UmlModel no tiene posición x,y? → ADR-002, separación semántica/visual.
+ *  - ¿Dónde se persiste? → Puerto UmlModelRepository (ADR-001).
+ *  - ¿Cómo se modifica? → Solo mediante UmlCommand + CommandHandler (ADR-004).
+ */
+public final class UmlModel {
+
+    private final UUID id;
+    private final UUID projectId;
+    private final List<UmlClass> classes;
+    private final List<UmlRelationship> relationships;
+
+    public UmlModel(UUID id, UUID projectId) {
+        this.id = Objects.requireNonNull(id, "id no puede ser null");
+        this.projectId = Objects.requireNonNull(projectId, "projectId no puede ser null");
+        this.classes = new ArrayList<>();
+        this.relationships = new ArrayList<>();
+    }
+
+    public static UmlModel create(UUID projectId) {
+        return new UmlModel(UUID.randomUUID(), projectId);
+    }
+
+    // ─── Operaciones de dominio ───────────────────────────────────────────────
+
+    /**
+     * Agrega una clase al modelo.
+     * No se permiten dos clases con el mismo nombre dentro del modelo.
+     */
+    public void addClass(UmlClass umlClass) {
+        Objects.requireNonNull(umlClass, "umlClass no puede ser null");
+        boolean duplicate = classes.stream()
+                .anyMatch(c -> c.getName().equalsIgnoreCase(umlClass.getName()));
+        if (duplicate) {
+            throw new IllegalArgumentException(
+                "Ya existe una clase con nombre '" + umlClass.getName() + "' en el modelo");
+        }
+        classes.add(umlClass);
+    }
+
+    /**
+     * Elimina una clase y todas sus relaciones.
+     * Regla de dominio: no pueden quedar relaciones huérfanas.
+     */
+    public void removeClass(UUID classId) {
+        classes.removeIf(c -> c.getId().equals(classId));
+        // Eliminar relaciones que involucran a la clase eliminada
+        relationships.removeIf(r ->
+                r.getSourceClassId().equals(classId) ||
+                r.getTargetClassId().equals(classId));
+    }
+
+    /**
+     * Agrega una relación entre dos clases.
+     * Valida que las clases referenciadas existan en el modelo.
+     */
+    public void addRelationship(UmlRelationship relationship) {
+        Objects.requireNonNull(relationship, "relationship no puede ser null");
+        boolean sourceExists = findClassById(relationship.getSourceClassId()).isPresent();
+        boolean targetExists = findClassById(relationship.getTargetClassId()).isPresent();
+        if (!sourceExists || !targetExists) {
+            throw new IllegalArgumentException(
+                "Las clases fuente y destino deben existir en el modelo antes de crear una relación");
+        }
+        relationships.add(relationship);
+    }
+
+    /** Elimina una relación por id. */
+    public void removeRelationship(UUID relationshipId) {
+        relationships.removeIf(r -> r.getId().equals(relationshipId));
+    }
+
+    /** Busca una clase por id. */
+    public Optional<UmlClass> findClassById(UUID id) {
+        return classes.stream().filter(c -> c.getId().equals(id)).findFirst();
+    }
+
+    /** Busca una clase por nombre (case-insensitive). */
+    public Optional<UmlClass> findClassByName(String name) {
+        return classes.stream()
+                .filter(c -> c.getName().equalsIgnoreCase(name))
+                .findFirst();
+    }
+
+    // ─── Getters ──────────────────────────────────────────────────────────────
+
+    public UUID getId()        { return id; }
+    public UUID getProjectId() { return projectId; }
+
+    public List<UmlClass> getClasses() {
+        return Collections.unmodifiableList(classes);
+    }
+
+    public List<UmlRelationship> getRelationships() {
+        return Collections.unmodifiableList(relationships);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UmlModel other)) return false;
+        return id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() { return id.hashCode(); }
+
+    @Override
+    public String toString() {
+        return "UmlModel{id=" + id
+               + ", classes=" + classes.size()
+               + ", relationships=" + relationships.size() + "}";
+    }
+}
