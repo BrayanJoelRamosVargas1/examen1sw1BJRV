@@ -1,8 +1,5 @@
 package com.umlcase.domain.model;
 
-import java.util.Objects;
-import java.util.UUID;
-
 /**
  * DOMINIO UML — Visibilidad de un elemento UML.
  *

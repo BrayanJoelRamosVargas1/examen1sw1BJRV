@@ -28,13 +28,15 @@
 |---|---|---|
 | RF-01 | Crear diagramas de clases UML | `[DOCENTE]` |
 | RF-02 | Edición manual del diagrama | `[DOCENTE]` |
+
 | RF-03 | Edición mediante comandos de voz | `[DOCENTE]` |
 | RF-04 | Crear modelo a partir de fotografía de diagrama | `[DOCENTE]` |
 | RF-05 | Trabajo colaborativo entre múltiples usuarios | `[DOCENTE]` |
 | RF-06 | Sincronización en tiempo real (no mediante F5) | `[DOCENTE]` |
 | RF-07 | Manejo de concurrencia (exclusión mutua, sincronización) | `[DOCENTE]` |
-| RF-08 | Importar desde Enterprise Architect (XMI) | `[DOCENTE]` |
-| RF-09 | Exportar hacia Enterprise Architect (XMI) | `[DOCENTE]` |
+| REQ-08 | Importar modelos desde Enterprise Architect | `[DOCENTE]` |
+| REQ-09 | Exportar modelos hacia Enterprise Architect | `[DOCENTE]` |
+| REQ-09.1 | XMI como formato de interoperabilidad | `[PENDIENTE / MECANISMO DE INTEROPERABILIDAD]` |
 | RF-10 | Notación UML 2.5 o superior | `[DOCENTE]` |
 | RF-11 | Generar backend Spring Boot ejecutable desde el diagrama | `[DOCENTE]` |
 | RF-12 | Backend generado con PostgreSQL | `[DOCENTE]` |
@@ -46,6 +48,7 @@
 | RF-18 | IA integrada en el producto final | `[DOCENTE]` |
 | RF-19 | Asistente para enseñar al usuario (dentro del software) | `[DOCENTE]` |
 | RF-20 | Frontend móvil para la aplicación generada | `[DOCENTE]` |
+| RF-20.1 | Desarrollo móvil con Flutter | `[PENDIENTE / CANDIDATO PRINCIPAL]` |
 | RF-21 | Aplicación móvil funcional sin internet (offline) | `[DOCENTE]` |
 | RF-22 | IA local en el dispositivo móvil | `[DOCENTE]` |
 | RF-23 | Sincronización al recuperar conexión | `[DOCENTE]` |

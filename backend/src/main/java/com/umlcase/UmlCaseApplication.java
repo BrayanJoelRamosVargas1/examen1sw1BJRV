@@ -6,8 +6,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 /**
  * Punto de entrada de la herramienta CASE.
  *
- * [DECISIÓN DE DISEÑO] Backend implementado en Spring Boot 3.x con Java 17.
- * Ver ADR-003.
+ * Backend implementado en Spring Boot 3.2.x.
+ * Versión objetivo de Java: 21 LTS (esperando actualización de entorno).
+ * Entorno temporal actual: Java 17 (ver ADR-003).
  */
 @SpringBootApplication
 public class UmlCaseApplication {

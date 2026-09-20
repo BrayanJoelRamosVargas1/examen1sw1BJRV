@@ -19,7 +19,7 @@ import java.util.UUID;
  * Preguntas orales esperadas:
  *  - ¿Por qué no tiene @Entity? → Separación dominio/infraestructura (ADR-001).
  *  - ¿Dónde se persiste? → A través del puerto UmlModelRepository (ADR-001).
- *  - ¿Qué significa final? → Inmutabilidad estructural; se crea con builder.
+ *  * ¿Qué significa final? → final impide heredar de UmlClass; la creación controlada se realiza mediante create(...)
  */
 public final class UmlClass {
 

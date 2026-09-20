@@ -13,7 +13,7 @@
 │           │                                                 │
 │           │ HTTP REST + WebSocket STOMP                    │
 │           ▼                                                 │
-│  Spring Boot 3.x (Backend CASE) [DECISIÓN DE DISEÑO]      │
+│  Spring Boot 3.2.x (Backend CASE)                           │
 │    ┌──────┴──────────────────────┐                         │
 │    │ domain/  application/       │                         │
 │    │ infrastructure/             │                         │
@@ -40,12 +40,15 @@ com.umlcase/
 │
 ├── domain/               ← Reglas de negocio UML. Sin Spring, sin JPA.
 │   ├── model/            ← UmlModel, UmlClass, UmlAttribute, UmlOperation,
-│   │                        UmlRelationship, UmlDiagram, UmlNodeView
-│   ├── command/          ← UmlCommand (sealed interface) y sus implementaciones
-│   └── port/             ← Interfaces: UmlModelRepository, DiagramRepository
+│   │                        UmlRelationship
+│   └── port/             ← Interfaces: UmlModelRepository
 │
 ├── application/          ← Casos de uso. Orquesta dominio + puertos.
+│   ├── command/          ← UmlCommand (sealed interface) y sus implementaciones
 │   └── handler/          ← CommandHandler (procesa UmlCommand)
+│
+├── diagram/              ← Representación visual (ADR-002)
+│   └── model/            ← UmlNodeView, UmlDiagram [PLANIFICADO], UmlEdgeView [PLANIFICADO]
 │
 └── infrastructure/       ← Implementaciones concretas.
     ├── persistence/      ← Entidades JPA + implementaciones de puertos
@@ -57,7 +60,7 @@ com.umlcase/
 ## 3. Separación Semántica / Visual (ADR-002)
 
 ```
-UmlModel (semántica)          UmlDiagram (visual)
+UmlModel (semántica)          UmlDiagram [PLANIFICADO]
 ────────────────────          ──────────────────────────
 UmlClass                      UmlNodeView
   id ←───────────────────────── elementId
@@ -65,7 +68,7 @@ UmlClass                      UmlNodeView
   attributes[]
   operations[]
 
-UmlRelationship               UmlEdgeView
+UmlRelationship               UmlEdgeView [PLANIFICADO]
   id ←───────────────────────── relationshipId
   type                          (waypoints si necesario)
   sourceClassId
@@ -111,15 +114,17 @@ PostgreSQL
 |---|---|---|
 | Editor frontend | Angular 17 | `[DECISIÓN DE DISEÑO]` |
 | Biblioteca de diagramación | GoJS | `[PENDIENTE / CANDIDATO PRINCIPAL]` |
-| Backend CASE | Spring Boot 3.x, Java 17 | `[DECISIÓN DE DISEÑO]` |
+| Backend CASE | Spring Boot 3.2.x | `[DECISIÓN DE DISEÑO]` |
+| Java objetivo del proyecto | 21 LTS | `[DECISIÓN DE DISEÑO]` |
+| Java usado temporalmente | 17 | `[PENDIENTE / ADAPTACIÓN DE ENTORNO]` |
 | ORM | Spring Data JPA / Hibernate | `[DECISIÓN DE DISEÑO]` |
 | Tiempo real | Spring WebSocket / STOMP | `[DECISIÓN DE DISEÑO]` |
 | Base de datos CASE | PostgreSQL | `[DECISIÓN DE DISEÑO]` |
 | Contenedores dev | Docker Compose | `[DECISIÓN DE DISEÑO]` |
-| Auth | JWT (Fase 1+) | `[DECISIÓN DE DISEÑO]` |
+| Auth | mecanismo por definir | `[PENDIENTE / FUERA DE FASE 0]` |
 | Backend generado | Spring Boot | `[DOCENTE]` |
 | BD del generado | PostgreSQL | `[DOCENTE]` |
-| Frontend móvil | Flutter | `[DOCENTE - muy fuerte]` |
+| Frontend móvil | Por definir | `[DOCENTE]` |
 | Nube | AWS | `[DOCENTE]` |
 | Build tool | Maven Wrapper | `[DECISIÓN DE DISEÑO]` |
 
@@ -127,7 +132,7 @@ PostgreSQL
 
 ## 6. Decisiones Arquitectónicas
 
-Ver `docs/elaboracion/adr/` para el detalle completo de cada ADR.
+Ver `docs/02-elaboracion/adr/` para el detalle completo de cada ADR.
 
 | ADR | Decisión |
 |---|---|

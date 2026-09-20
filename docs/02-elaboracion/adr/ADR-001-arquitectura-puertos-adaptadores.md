@@ -8,11 +8,11 @@
 
 ## Contexto
 
-La herramienta CASE debe soportar múltiples formas de entrada (manual, voz, imagen, XMI) que todas producen el mismo resultado: modificaciones al modelo UML. Adicionalmente, el docente puede pedir durante el examen que expliquemos y modifiquemos cualquier parte del código.
+El docente exige establecer una **Arquitectura de Software justificable**. La aplicación debe ser capaz de evolucionar y soportar múltiples clientes (API, Web, móvil) o formas de entrada (voz, XMI) sin acoplarse a tecnologías específicas desde el día cero.
 
 ## Decisión
 
-Adoptamos una **arquitectura de puertos y adaptadores (Hexagonal)** para el módulo de dominio UML:
+Se adopta una **Arquitectura Hexagonal (Puertos y Adaptadores)**, inspirada en los principios de Clean Architecture `[DECISIÓN DE DISEÑO]` para el módulo de dominio UML:
 
 ```
 DOMINIO UML (puro, sin frameworks)
@@ -34,7 +34,7 @@ El **dominio no importa** ninguna clase de Spring, JPA, Hibernate ni GoJS.
 | Alternativa | Razón de rechazo |
 |---|---|
 | Entidades JPA directamente en dominio | Acopla el modelo al ORM; dificulta testear el dominio y defender cambios oralmente |
-| Active Record pattern | El docente pide Clean Architecture justificable; AR mezcla dominio e infraestructura |
+| Active Record pattern | El docente pide arquitectura justificable, optamos por diseño limpio; AR mezcla dominio e infraestructura |
 | Modelo anémico + servicios sin capas | No muestra conocimiento de arquitectura ante el docente |
 
 ## Consecuencias

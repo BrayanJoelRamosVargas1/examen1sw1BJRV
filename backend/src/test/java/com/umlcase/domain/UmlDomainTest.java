@@ -1,6 +1,7 @@
 package com.umlcase.domain;
 
 import com.umlcase.domain.model.*;
+import com.umlcase.diagram.model.UmlNodeView;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

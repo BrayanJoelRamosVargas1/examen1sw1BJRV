@@ -1,4 +1,4 @@
-package com.umlcase.domain.model;
+package com.umlcase.diagram.model;
 
 import java.util.Objects;
 import java.util.UUID;

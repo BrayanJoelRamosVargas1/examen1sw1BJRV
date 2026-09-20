@@ -49,22 +49,34 @@ Usamos **Spring Boot** para ambos:
 
 ## Contexto
 
-La herramienta acepta modificaciones al diagrama UML desde múltiples fuentes: manual, voz, imagen, XMI. El docente exige `[DOCENTE]` reutilización de componentes ("trabajen una vez, úsenlo muchas veces").
+La herramienta CASE debe soportar múltiples formas de entrada (manual, voz, imagen, XMI) que todas producen el mismo resultado: modificaciones al modelo UML. Adicionalmente, el docente puede pedir durante el examen que expliquemos y modifiquemos cualquier parte del código.
 
 ## Decisión
 
-Toda modificación al `UmlModel` se expresa como un **`UmlCommand`**. Un `CommandHandler` centralizado procesa el comando independientemente de su origen.
+Adoptamos un **Command Pattern** para toda modificación al `UmlModel`.
+
+Los comandos viven en **`application/command`**, **NO en el dominio**:
 
 ```
-Manual Input ─┐
-Voice Input ──┼──► UmlCommand ──► CommandHandler ──► UmlModel ──► Port
-Photo Input ──┘
-XMI Input ────┘
+EXTERNO (API / voz / imagen / XMI)
+            │
+     UmlCommand  ← com.umlcase.application.command
+            │
+     CommandHandler ← com.umlcase.application.handler
+            │
+     UmlModel.addClass() / etc. ← com.umlcase.domain.model
 ```
+
+El dominio UML (UmlModel, UmlClass, etc.) **no sabe que existen comandos**.
+Los comandos son DTOs de intención de la capa de aplicación.
+
+[CORRECCIÓN — Auditoría Fase 0] La ubicación inicial `domain/command` fue incorrecta. Corregida a `application/command`. El dominio no debe conocer la forma en que el exterior lo invoca.
 
 Estructura del comando:
 
 ```java
+// package com.umlcase.application.command  ← CORRECTO
+// NO: com.umlcase.domain.command           ← INCORRECTO (corregido)
 public sealed interface UmlCommand permits
     CreateClassCommand,
     RenameClassCommand,

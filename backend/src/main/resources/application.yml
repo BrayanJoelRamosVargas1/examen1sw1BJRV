@@ -28,7 +28,7 @@ server:
     include-binding-errors: always
 
 # ── CORS (Angular local en :4200) ─────────────────────────────────────────────
-# Configurado en CorsConfig.java, aquí solo el origen permitido en dev
+# Configuración CORS prevista para fase posterior, aquí solo el origen permitido en dev
 app:
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
