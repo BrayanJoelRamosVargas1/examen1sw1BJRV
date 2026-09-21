@@ -1,0 +1,1 @@
+ALTER TABLE uml_models ADD COLUMN last_modified BIGINT DEFAULT 0 NOT NULL;

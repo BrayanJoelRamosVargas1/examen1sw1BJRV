@@ -63,4 +63,13 @@ public interface UmlModelRepository {
      * @return true si el proyecto ya tiene un modelo
      */
     boolean existsByProjectId(UUID projectId);
+
+    /**
+     * Recupera el modelo UML para su modificación, forzando un incremento
+     * de versión (Optimistic Lock) incluso si solo cambian entidades hijas.
+     *
+     * @param projectId el id del proyecto
+     * @return Optional con el modelo, o empty si no existe
+     */
+    Optional<UmlModel> loadForUpdate(UUID projectId);
 }

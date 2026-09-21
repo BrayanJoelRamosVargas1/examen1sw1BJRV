@@ -1,6 +1,7 @@
 package com.umlcase.infrastructure.web;
 
 import com.umlcase.application.handler.CreateClassHandler;
+import com.umlcase.application.handler.RenameClassHandler;
 import com.umlcase.domain.port.UmlModelRepository;
 import com.umlcase.infrastructure.web.controller.UmlClassController;
 import com.umlcase.infrastructure.web.controller.UmlProjectController;
@@ -40,6 +41,9 @@ class CorsWebConfigTest {
     @MockBean
     private CreateClassHandler createClassHandler;
 
+    @MockBean
+    private RenameClassHandler renameClassHandler;
+
     @Test
     @DisplayName("GET /api/projects/{projectId}/model permite CORS desde localhost:4200")
     void cors_allowsGetFromLocalhost() throws Exception {
@@ -63,7 +67,23 @@ class CorsWebConfigTest {
                         .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "content-type"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:4200"))
-                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,OPTIONS"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PATCH,OPTIONS"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "content-type"));
+    }
+
+    @Test
+    @DisplayName("OPTIONS /api/projects/{projectId}/classes/{classId} autoriza el preflight PATCH desde localhost:4200")
+    void cors_allowsPreflightPatchFromLocalhost() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+
+        mockMvc.perform(options("/api/projects/" + projectId + "/classes/" + classId)
+                        .header(HttpHeaders.ORIGIN, "http://localhost:4200")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "PATCH")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "content-type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:4200"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PATCH,OPTIONS"))
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "content-type"));
     }
 }

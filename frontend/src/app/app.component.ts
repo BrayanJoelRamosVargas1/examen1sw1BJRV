@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { UmlService, UmlClassDto } from './services/uml.service';
-import { UmlWebSocketService, ClassCreatedEvent, WsStatus } from './services/uml-websocket.service';
+import { UmlWebSocketService, ClassCreatedEvent, ClassRenamedEvent, UmlEvent, WsStatus } from './services/uml-websocket.service';
 import { v4 as uuidv4 } from 'uuid';
 
 // UUID del proyecto temporal de desarrollo (Fase 1)
@@ -27,7 +27,7 @@ export class AppComponent implements OnInit, OnDestroy {
   errorMessage = '';
 
   // Buffer de eventos que llegan antes de que el GET snapshot termine
-  private eventBuffer: ClassCreatedEvent[] = [];
+  private eventBuffer: UmlEvent[] = [];
   private snapshotLoaded = false;
   private wsSub?: Subscription;
 
@@ -70,12 +70,10 @@ export class AppComponent implements OnInit, OnDestroy {
         this.classes = [...model.classes];
         this.snapshotLoaded = true;
 
-        // Paso 3: aplicar eventos bufferizados cuya versión sea mayor al snapshot
+        // Paso 3: aplicar eventos bufferizados usando la misma regla estricta de secuencia
         // (pueden haber llegado por WS mientras el GET estaba en vuelo)
         for (const bufferedEvent of this.eventBuffer) {
-          if (bufferedEvent.modelVersion > this.currentVersion) {
-            this.applyEvent(bufferedEvent);
-          }
+          this.applyEvent(bufferedEvent);
         }
         this.eventBuffer = [];
       },
@@ -109,7 +107,8 @@ export class AppComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         if (err.status === 409) {
-          this.errorMessage = 'Conflicto de versión: recarga el modelo (F5)';
+          this.errorMessage = 'Conflicto de versión detectado. Resincronizando estado automáticamente...';
+          this.loadModel();
         } else if (err.status === 404) {
           this.errorMessage = 'Proyecto no encontrado';
         } else {
@@ -120,27 +119,85 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Aplica un evento CLASS_CREATED recibido por WebSocket.
-   * Usa upsert por classId para evitar duplicados cuando el mismo
-   * navegador recibe: POST response + su propio broadcast CLASS_CREATED.
+   * Aplica un evento recibido por WebSocket según protocolo estricto de secuencia:
+   *
+   *   event.modelVersion <= currentVersion    → ignorar (duplicado / desordenado)
+   *   event.modelVersion == currentVersion + 1 → aplicar incrementalmente
+   *   event.modelVersion >  currentVersion + 1 → gap detectado → GET /model
+   *
+   * Esta regla garantiza consistencia causal: nunca aplicamos eventos fuera de orden
+   * y detectamos huecos en la secuencia para reconstruir el snapshot completo.
    */
-  private applyEvent(event: ClassCreatedEvent): void {
-    this.upsertClass({ id: event.classId, name: event.className });
-    // version = max(local, recibida)
-    this.currentVersion = Math.max(this.currentVersion, event.modelVersion);
-    this.eventLog.unshift(`CLASS_CREATED "${event.className}" v${event.modelVersion}`);
+  private applyEvent(event: UmlEvent): void {
+    if (event.modelVersion <= this.currentVersion) {
+      // Duplicado o evento ya procesado — ignorar silenciosamente
+      return;
+    }
+
+    if (event.modelVersion > this.currentVersion + 1) {
+      // Gap detectado: versiones intermedias perdidas → resincronización completa
+      this.loadModel();
+      return;
+    }
+
+    // event.modelVersion === currentVersion + 1 → aplicar incrementalmente
+    if ('newName' in event) {
+      // Es ClassRenamedEvent
+      this.upsertClass({ id: event.classId, name: event.newName });
+      this.currentVersion = event.modelVersion;
+      this.eventLog.unshift(`CLASS_RENAMED "${event.newName}" v${event.modelVersion}`);
+    } else {
+      // Es ClassCreatedEvent
+      this.upsertClass({ id: event.classId, name: event.className });
+      this.currentVersion = event.modelVersion;
+      this.eventLog.unshift(`CLASS_CREATED "${event.className}" v${event.modelVersion}`);
+    }
+
     // Mantener log acotado
     if (this.eventLog.length > 20) {
       this.eventLog.pop();
     }
   }
 
+  renameClass(cls: UmlClassDto): void {
+    const newName = prompt('Nuevo nombre:', cls.name);
+    if (!newName || newName.trim() === '' || newName.trim() === cls.name) return;
+
+    this.errorMessage = '';
+
+    this.umlService.renameClass(this.projectId, cls.id, {
+      commandId: uuidv4(),
+      participantId: 'browser-A', // o browser-B para testing
+      expectedVersion: this.currentVersion,
+      newName: newName.trim()
+    }).subscribe({
+      next: (response) => {
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+        this.upsertClass({ id: response.classId, name: response.newName });
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.errorMessage = 'Conflicto de versión detectado. Resincronizando estado automáticamente...';
+          this.loadModel();
+        } else if (err.status === 404) {
+          this.errorMessage = 'Proyecto o Clase no encontrado';
+        } else {
+          this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+        }
+      }
+    });
+  }
+
   private upsertClass(cls: UmlClassDto): void {
     const existing = this.classes.findIndex(c => c.id === cls.id);
     if (existing === -1) {
       this.classes = [...this.classes, cls];
+    } else {
+      // Actualizar si existe (para rename)
+      const updatedClasses = [...this.classes];
+      updatedClasses[existing] = cls;
+      this.classes = updatedClasses;
     }
-    // Si ya existe, no duplicar
   }
 
   ngOnDestroy(): void {

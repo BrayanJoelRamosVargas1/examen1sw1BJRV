@@ -36,9 +36,55 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
     }
 
     @Override
+    public Optional<UmlModel> loadForUpdate(UUID projectId) {
+        return springDataRepository.lockForMutation(projectId)
+                .map(this::toDomain);
+    }
+
+    @Override
     public UmlModel save(UmlModel model) {
-        JpaUmlModelEntity entity = toEntity(model);
         try {
+            JpaUmlModelEntity entity;
+            Optional<JpaUmlModelEntity> existing = springDataRepository.findById(model.getId());
+
+            if (existing.isPresent()) {
+                entity = existing.get();
+                if (!java.util.Objects.equals(model.getVersion(), entity.getVersion())) {
+                    throw new ModelVersionConflictException(
+                        String.format("Conflicto de concurrencia al guardar el modelo UML. Esperado: %d, Actual: %d",
+                                model.getVersion(), entity.getVersion())
+                    );
+                }
+                // Smart merge: update existing or add new
+                // Remove deleted
+                entity.getClasses().removeIf(c ->
+                    model.getClasses().stream().noneMatch(mc -> mc.getId().equals(c.getId()))
+                );
+                // Update or Add
+                for (UmlClass domainClass : model.getClasses()) {
+                    Optional<JpaUmlClassEntity> existingChild = entity.getClasses().stream()
+                        .filter(c -> c.getId().equals(domainClass.getId()))
+                        .findFirst();
+                    if (existingChild.isPresent()) {
+                        existingChild.get().setName(domainClass.getName());
+                    } else {
+                        JpaUmlClassEntity newChild = new JpaUmlClassEntity();
+                        newChild.setId(domainClass.getId());
+                        newChild.setName(domainClass.getName());
+                        entity.addClass(newChild);
+                    }
+                }
+                // We rely on JPA's Optimistic Locking / OPTIMISTIC_FORCE_INCREMENT to manage version
+            } else {
+                entity = toEntity(model);
+            }
+
+            // Forzamos que la entidad se detecte como "sucia" (dirty check)
+            // Esto provocará un UPDATE inmediato en el flush, incrementando automáticamente el @Version de la raíz
+            if (entity.getId() != null) {
+                entity.markModified();
+            }
+
             JpaUmlModelEntity savedEntity = springDataRepository.saveAndFlush(entity);
             return toDomain(savedEntity);
         } catch (ObjectOptimisticLockingFailureException e) {

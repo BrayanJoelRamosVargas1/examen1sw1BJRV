@@ -20,9 +20,13 @@ import java.util.stream.Collectors;
 public class UmlProjectController {
 
     private final UmlModelRepository repository;
+    private final com.umlcase.application.handler.RenameClassHandler renameClassHandler;
 
-    public UmlProjectController(UmlModelRepository repository) {
+
+    public UmlProjectController(UmlModelRepository repository,
+                                com.umlcase.application.handler.RenameClassHandler renameClassHandler) {
         this.repository = repository;
+        this.renameClassHandler = renameClassHandler;
     }
 
     @GetMapping("/model")
@@ -36,5 +40,23 @@ public class UmlProjectController {
 
         UmlModelDto dto = new UmlModelDto(model.getProjectId(), model.getVersion(), classes);
         return ResponseEntity.ok(dto);
+    }
+
+    @org.springframework.web.bind.annotation.PatchMapping("/classes/{classId}")
+    public ResponseEntity<com.umlcase.infrastructure.web.dto.RenameClassResponse> renameClass(
+            @PathVariable UUID projectId,
+            @PathVariable UUID classId,
+            @org.springframework.web.bind.annotation.RequestBody com.umlcase.infrastructure.web.dto.RenameClassRequest request) {
+
+        var command = new com.umlcase.application.command.UmlCommand.RenameClass(
+                UUID.fromString(request.commandId()),
+                projectId,
+                request.participantId(),
+                request.expectedVersion(),
+                classId,
+                request.newName()
+        );
+
+        return ResponseEntity.ok(renameClassHandler.handle(command));
     }
 }

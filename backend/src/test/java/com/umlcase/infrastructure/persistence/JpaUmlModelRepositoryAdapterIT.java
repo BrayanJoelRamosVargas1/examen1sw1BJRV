@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -151,5 +152,33 @@ class JpaUmlModelRepositoryAdapterIT {
         instance2.addClass(UmlClass.create("Pedido"));
         assertThatThrownBy(() -> repository.save(instance2))
                 .isInstanceOf(ModelVersionConflictException.class);
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("2.1.B: Modificar un atributo de un hijo (renombrar clase) DEBE incrementar la versión usando loadForUpdate")
+    void save_renameChildClass_incrementsRootVersion() {
+        UUID projectId = UUID.randomUUID();
+        UmlModel model = UmlModel.create(projectId);
+        UmlClass cliente = UmlClass.create("Cliente");
+        model.addClass(cliente);
+        UmlModel saved = repository.save(model);
+        long versionAfterCreate = saved.getVersion();
+
+        // Renombrar la clase usando loadForUpdate (que tiene OPTIMISTIC_FORCE_INCREMENT)
+        UmlModel loaded = repository.loadForUpdate(projectId).orElseThrow();
+        UmlClass classToRename = loaded.getClasses().stream()
+                .filter(c -> c.getName().equals("Cliente"))
+                .findFirst().orElseThrow();
+        classToRename.rename("ClienteNuevo");
+
+        // Guardar el modelo
+        UmlModel updatedModel = repository.save(loaded);
+
+        // Si JPA no detecta el cambio en la fila hija como un cambio en la raíz,
+        // el versionado de la raíz no subirá.
+        assertThat(updatedModel.getVersion())
+                .as("La versión de la raíz debe incrementar tras modificar un hijo")
+                .isGreaterThan(versionAfterCreate);
     }
 }

@@ -11,16 +11,26 @@ export interface ClassCreatedEvent {
   modelVersion: number;
 }
 
+export interface ClassRenamedEvent {
+  commandId: string;
+  projectId: string;
+  classId: string;
+  newName: string;
+  modelVersion: number;
+}
+
+export type UmlEvent = ClassCreatedEvent | ClassRenamedEvent;
+
 export type WsStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 @Injectable({ providedIn: 'root' })
 export class UmlWebSocketService {
   private client!: Client;
-  private eventSubject = new Subject<ClassCreatedEvent>();
+  private eventSubject = new Subject<UmlEvent>();
   private statusSubject = new Subject<WsStatus>();
 
-  /** Stream de eventos CLASS_CREATED recibidos */
-  events$: Observable<ClassCreatedEvent> = this.eventSubject.asObservable();
+  /** Stream de eventos recibidos */
+  events$: Observable<UmlEvent> = this.eventSubject.asObservable();
   /** Stream del estado de conexión */
   status$: Observable<WsStatus> = this.statusSubject.asObservable();
 
@@ -48,7 +58,7 @@ export class UmlWebSocketService {
           this.client.subscribe(
             `/topic/projects/${projectId}`,
             (message: IMessage) => {
-              const event: ClassCreatedEvent = JSON.parse(message.body);
+              const event: UmlEvent = JSON.parse(message.body);
               this.eventSubject.next(event);
             }
           );

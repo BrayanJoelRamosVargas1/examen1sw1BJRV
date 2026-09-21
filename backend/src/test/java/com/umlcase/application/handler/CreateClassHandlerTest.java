@@ -160,6 +160,11 @@ class CreateClassHandlerTest {
         }
 
         @Override
+        public Optional<UmlModel> loadForUpdate(UUID projectId) {
+            return findByProjectId(projectId);
+        }
+
+        @Override
         public UmlModel save(UmlModel model) {
             saves++;
             // Simula el incremento de @Version que hace JPA al hacer saveAndFlush
@@ -183,6 +188,11 @@ class CreateClassHandlerTest {
         @Override
         public void publish(ClassCreatedEvent event) {
             events.add(event);
+        }
+
+        @Override
+        public void publish(com.umlcase.application.event.ClassRenamedEvent event) {
+            // Ignorado en estos tests
         }
 
         List<ClassCreatedEvent> publishedEvents() { return events; }

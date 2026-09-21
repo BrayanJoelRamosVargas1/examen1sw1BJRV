@@ -28,7 +28,10 @@ public class JpaUmlModelEntity {
     private UUID projectId;
 
     @Version
-    private long version;
+    private Long version;
+
+    @jakarta.persistence.Column(name = "last_modified", nullable = false)
+    private Long lastModified = 0L;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "model_id", nullable = false)
@@ -36,5 +39,9 @@ public class JpaUmlModelEntity {
 
     public void addClass(JpaUmlClassEntity classEntity) {
         classes.add(classEntity);
+    }
+
+    public void markModified() {
+        this.lastModified = System.currentTimeMillis();
     }
 }

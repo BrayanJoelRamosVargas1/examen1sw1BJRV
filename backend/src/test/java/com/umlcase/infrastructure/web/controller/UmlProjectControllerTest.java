@@ -40,6 +40,12 @@ class UmlProjectControllerTest {
     @MockBean
     private UmlModelRepository repository;
 
+    @MockBean
+    private com.umlcase.application.handler.CreateClassHandler createClassHandler;
+
+    @MockBean
+    private com.umlcase.application.handler.RenameClassHandler renameClassHandler;
+
     // ─── Test del comportamiento correcto ─────────────────────────────────────
 
     @Test

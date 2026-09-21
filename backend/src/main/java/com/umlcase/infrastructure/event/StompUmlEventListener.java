@@ -16,8 +16,14 @@ public class StompUmlEventListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleClassCreatedEvent(ClassCreatedEvent event) {
-        String topic = "/topic/projects/" + event.projectId();
-        messagingTemplate.convertAndSend(topic, event);
+    public void handleClassCreatedEvent(com.umlcase.application.event.ClassCreatedEvent event) {
+        String destination = "/topic/projects/" + event.projectId();
+        messagingTemplate.convertAndSend(destination, event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleClassRenamedEvent(com.umlcase.application.event.ClassRenamedEvent event) {
+        String destination = "/topic/projects/" + event.projectId();
+        messagingTemplate.convertAndSend(destination, event);
     }
 }

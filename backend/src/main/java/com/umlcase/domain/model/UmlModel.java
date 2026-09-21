@@ -61,6 +61,29 @@ public final class UmlModel {
     }
 
     /**
+     * Renombra una clase existente en el modelo.
+     * Invariantes:
+     * 1. La clase debe existir.
+     * 2. No puede haber otra clase con el mismo nombre nuevo.
+     */
+    public void renameClass(UUID classId, String newName) {
+        Objects.requireNonNull(classId, "classId no puede ser null");
+        Objects.requireNonNull(newName, "newName no puede ser null");
+
+        UmlClass classToRename = findClassById(classId)
+            .orElseThrow(() -> new IllegalArgumentException("No se encontró la clase con id " + classId));
+
+        boolean duplicate = classes.stream()
+            .anyMatch(c -> !c.getId().equals(classId) && c.getName().equalsIgnoreCase(newName));
+
+        if (duplicate) {
+            throw new IllegalArgumentException("Ya existe otra clase con el nombre '" + newName + "' en el modelo");
+        }
+
+        classToRename.rename(newName);
+    }
+
+    /**
      * Elimina una clase y todas sus relaciones.
      * Regla de dominio: no pueden quedar relaciones huérfanas.
      */

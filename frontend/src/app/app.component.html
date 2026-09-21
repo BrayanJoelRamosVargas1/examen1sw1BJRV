@@ -48,6 +48,7 @@
         <li *ngFor="let cls of classes" class="class-item">
           <span class="class-name">{{ cls.name }}</span>
           <code class="class-id">{{ cls.id }}</code>
+          <button class="rename-btn" (click)="renameClass(cls)" [disabled]="wsStatus !== 'connected'">Renombrar</button>
         </li>
       </ul>
       <ng-template #emptyClasses>
