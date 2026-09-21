@@ -21,6 +21,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.UUID;
+import com.jayway.jsonpath.JsonPath;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -131,6 +132,6 @@ class RenameClassApiIT {
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(response.getBody()).contains("MODEL_VERSION_CONFLICT");
+        assertThat(com.jayway.jsonpath.JsonPath.parse(response.getBody()).read("$.code", String.class)).isEqualTo("MODEL_VERSION_CONFLICT");
     }
 }

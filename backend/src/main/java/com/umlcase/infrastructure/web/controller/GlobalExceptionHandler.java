@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ModelVersionConflictException.class)
     public ResponseEntity<?> handleModelVersionConflict(ModelVersionConflictException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("error", ex.getMessage()));
+                .body(new com.umlcase.infrastructure.web.dto.ApiErrorResponse("MODEL_VERSION_CONFLICT", ex.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
