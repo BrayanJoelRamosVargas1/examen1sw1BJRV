@@ -147,34 +147,47 @@ export class AppComponent implements OnInit, OnDestroy {
       this.upsertClass({ id: event.classId, name: event.newName, attributes: targetClass ? targetClass.attributes : [] });
       this.currentVersion = event.modelVersion;
       this.eventLog.unshift(`CLASS_RENAMED "${event.newName}" v${event.modelVersion}`);
-    } else if ('attributeId' in event) {
-      // Puede ser AttributeAddedEvent o AttributeUpdatedEvent
+    } else if (('eventType' in event && event.eventType === 'ATTRIBUTE_UPDATED') || ('eventType' in event === false && 'attributeId' in event && !this.isNewAttribute(event.classId, (event as any).attributeId))) {
+      // Es AttributeUpdatedEvent
       const targetClass = this.classes.find(c => c.id === event.classId);
       if (targetClass) {
         targetClass.attributes = targetClass.attributes || [];
         const attrIndex = targetClass.attributes.findIndex(a => a.id === event.attributeId);
         
         if (attrIndex !== -1) {
-          // Ya existe -> Es Update
+          // Update
           targetClass.attributes[attrIndex].name = event.name;
           targetClass.attributes[attrIndex].type = event.type;
           targetClass.attributes[attrIndex].visibility = event.visibility;
           this.eventLog.unshift(`ATTRIBUTE_UPDATED "${event.name}" v${event.modelVersion}`);
+          this.upsertClass(targetClass);
+          this.currentVersion = event.modelVersion;
         } else {
-          // No existe -> Es Add
-          targetClass.attributes.push({
-            id: event.attributeId,
-            name: event.name,
-            type: event.type,
-            visibility: event.visibility,
-            orderIndex: event.orderIndex
-          });
-          this.eventLog.unshift(`ATTRIBUTE_ADDED "${event.name}" v${event.modelVersion}`);
+          // Update failed locally -> Snapshot
+          this.loadModel();
+          return;
         }
+      } else {
+        // En un caso real pediríamos snapshot al faltar la clase
+        this.loadModel();
+        return;
+      }
+    } else if (('eventType' in event && event.eventType === 'ATTRIBUTE_ADDED') || ('attributeId' in event)) {
+      // Es AttributeAddedEvent
+      const targetClass = this.classes.find(c => c.id === event.classId);
+      if (targetClass) {
+        targetClass.attributes = targetClass.attributes || [];
+        targetClass.attributes.push({
+          id: event.attributeId,
+          name: event.name,
+          type: event.type,
+          visibility: event.visibility,
+          orderIndex: event.orderIndex
+        });
+        this.eventLog.unshift(`ATTRIBUTE_ADDED "${event.name}" v${event.modelVersion}`);
         this.upsertClass(targetClass);
         this.currentVersion = event.modelVersion;
       } else {
-        // En un caso real pediríamos snapshot al faltar la clase
         this.loadModel();
         return;
       }
@@ -265,6 +278,12 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  private isNewAttribute(classId: string, attributeId: string): boolean {
+    const cls = this.classes.find(c => c.id === classId);
+    if (!cls || !cls.attributes) return true;
+    return cls.attributes.findIndex(a => a.id === attributeId) === -1;
+  }
+
   updateAttribute(cls: UmlClassDto, attr: any): void {
     const newName = prompt(`Editar nombre de ${attr.name}:`, attr.name);
     if (!newName || newName.trim() === '') return;
@@ -288,7 +307,16 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.umlService.updateAttribute(this.projectId, cls.id, attr.id, request).subscribe({
       next: (response) => {
-        this.currentVersion = Math.max(this.currentVersion, response.modelVersion || 0); // response may not have it depending on Void return, wait backend returns Void? Oh, backend returns ResponseEntity.ok().build() so Void. Wait, the prompt said Response: commandId, classId, attributeId, name, type, visibility, orderIndex, modelVersion.
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+        const targetClass = this.classes.find(c => c.id === cls.id);
+        if (targetClass) {
+          targetClass.attributes = targetClass.attributes || [];
+          const attrIndex = targetClass.attributes.findIndex(a => a.id === attr.id);
+          if (attrIndex !== -1) {
+            targetClass.attributes[attrIndex] = response.attribute;
+            this.upsertClass(targetClass);
+          }
+        }
       },
       error: (err) => {
         if (err.status === 409) {

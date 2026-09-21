@@ -93,7 +93,7 @@ public class UmlProjectController {
     }
 
     @org.springframework.web.bind.annotation.PutMapping("/classes/{classId}/attributes/{attributeId}")
-    public ResponseEntity<Void> updateAttribute(
+    public ResponseEntity<com.umlcase.infrastructure.web.dto.UpdateAttributeResponse> updateAttribute(
             @PathVariable UUID projectId,
             @PathVariable UUID classId,
             @PathVariable UUID attributeId,
@@ -111,7 +111,7 @@ public class UmlProjectController {
                 .visibility(request.visibility())
                 .build();
 
-        updateAttributeHandler.handle(command);
-        return ResponseEntity.ok().build();
+        var response = updateAttributeHandler.handle(command);
+        return ResponseEntity.ok(response);
     }
 }

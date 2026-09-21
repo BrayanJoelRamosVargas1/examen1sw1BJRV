@@ -103,3 +103,15 @@ Esta matriz garantiza la regla del docente:
 | F2.2.1-02 | Persistencia V3 (uml_attributes) y orderIndex | `[FASE 2.2.1]` | `AddAttributeTransactionalIT` | `[OK]` |
 | F2.2.1-03 | STOMP broadcast ATTRIBUTE_ADDED | `[FASE 2.2.1]` | Demo A/B | `[OK]` |
 | F2.2.1-04 | Frontend visualiza atributos | `[FASE 2.2.1]` | Demo A/B y F5 | `[OK]` |
+
+---
+
+## Componentes de Fase 2.2.2 (Update Attribute)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F2.2.2-01 | PUT `/api/projects/{projectId}/classes/{classId}/attributes/{attributeId}` | `[FASE 2.2.2]` | `UpdateAttributeApiIT` | `[OK]` |
+| F2.2.2-02 | STOMP broadcast ATTRIBUTE_UPDATED | `[FASE 2.2.2]` | Demo A/B | `[OK]` |
+| F2.2.2-03 | Deduplicación STOMP para el autor del HTTP 200 | `[FASE 2.2.2]` | Demo A/B | `[OK]` |
+| F2.2.2-04 | Separación lógica Frontend Add vs Update | `[FASE 2.2.2]` | Demo A/B | `[OK]` |
+| F2.2.2-05 | 409 Conflict Optimistic Locking | `[FASE 2.2.2]` | `UpdateAttributeApiIT` | `[OK]` |

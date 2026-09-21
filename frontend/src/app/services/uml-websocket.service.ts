@@ -20,6 +20,7 @@ export interface ClassRenamedEvent {
 }
 
 export interface AttributeAddedEvent {
+  eventType?: string;
   eventId: string;
   commandId: string;
   projectId: string;
@@ -33,6 +34,7 @@ export interface AttributeAddedEvent {
 }
 
 export interface AttributeUpdatedEvent {
+  eventType?: string;
   eventId: string;
   commandId: string;
   projectId: string;

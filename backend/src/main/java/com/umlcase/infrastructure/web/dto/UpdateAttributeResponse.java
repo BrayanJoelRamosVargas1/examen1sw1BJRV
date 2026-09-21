@@ -6,10 +6,6 @@ import java.util.UUID;
 public record UpdateAttributeResponse(
         UUID commandId,
         UUID classId,
-        UUID attributeId,
-        String name,
-        String type,
-        Visibility visibility,
-        int orderIndex,
+        UmlAttributeDto attribute,
         long modelVersion
 ) {}

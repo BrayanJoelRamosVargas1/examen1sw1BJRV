@@ -16,4 +16,8 @@ public record AttributeUpdatedEvent(
         Visibility visibility,
         int orderIndex,
         long modelVersion
-) {}
+) {
+    public String getEventType() {
+        return "ATTRIBUTE_UPDATED";
+    }
+}

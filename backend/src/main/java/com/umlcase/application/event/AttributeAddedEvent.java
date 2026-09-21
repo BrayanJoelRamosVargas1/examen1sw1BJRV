@@ -12,4 +12,8 @@ public record AttributeAddedEvent(
     String visibility,
     int orderIndex,
     long modelVersion
-) {}
+) {
+    public String getEventType() {
+        return "ATTRIBUTE_ADDED";
+    }
+}

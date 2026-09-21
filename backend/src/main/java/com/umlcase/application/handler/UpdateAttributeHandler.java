@@ -22,7 +22,7 @@ public class UpdateAttributeHandler {
     }
 
     @Transactional
-    public void handle(UpdateAttributeCommand command) {
+    public com.umlcase.infrastructure.web.dto.UpdateAttributeResponse handle(UpdateAttributeCommand command) {
         UmlModel model = repository.loadForUpdate(command.projectId())
                 .orElseThrow(() -> new com.umlcase.application.exception.ProjectNotFoundException("Proyecto no encontrado: " + command.projectId()));
 
@@ -54,5 +54,18 @@ public class UpdateAttributeHandler {
                 .build();
 
         publisher.publish(event);
+
+        return new com.umlcase.infrastructure.web.dto.UpdateAttributeResponse(
+                command.commandId(),
+                command.classId(),
+                new com.umlcase.infrastructure.web.dto.UmlAttributeDto(
+                        updatedAttribute.getId(),
+                        updatedAttribute.getName(),
+                        updatedAttribute.getType(),
+                        updatedAttribute.getVisibility().name(),
+                        updatedAttribute.getOrderIndex()
+                ),
+                savedModel.getVersion()
+        );
     }
 }

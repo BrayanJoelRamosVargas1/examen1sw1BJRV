@@ -92,10 +92,9 @@ export class UmlService {
     attributeId: string,
     request: any
   ): Observable<any> {
-    return this.http.put(
+    return this.http.put<any>(
       `${API}/projects/${projectId}/classes/${classId}/attributes/${attributeId}`,
-      request,
-      { responseType: 'text' }
+      request
     );
   }
 }

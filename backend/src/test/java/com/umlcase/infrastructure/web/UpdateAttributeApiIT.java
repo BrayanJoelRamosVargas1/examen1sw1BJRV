@@ -50,6 +50,36 @@ class UpdateAttributeApiIT {
         mockMvc.perform(put("/api/projects/" + projectId + "/classes/" + clazz.getId() + "/attributes/" + attr.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.commandId").value(req.commandId().toString()))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.classId").value(clazz.getId().toString()))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.attribute.id").value(attr.getId().toString()))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.attribute.name").value("newName"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.attribute.type").value("Integer"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.attribute.visibility").value("PUBLIC"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.attribute.orderIndex").value(0))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.modelVersion").value(savedModel.getVersion() + 1));
+    }
+
+    @Test
+    void put_updateAttribute_returns409_whenVersionIsStale() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        UmlModel model = UmlModel.create(projectId);
+        UmlClass clazz = UmlClass.create("User");
+        model.addClass(clazz);
+        UmlAttribute attr = model.addAttribute(clazz.getId(), "oldName", "String", Visibility.PRIVATE);
+        UmlModel savedModel = repository.save(model);
+
+        long staleVersion = savedModel.getVersion() - 1;
+
+        UpdateAttributeRequest req = new UpdateAttributeRequest(
+                UUID.randomUUID(), "p1", staleVersion, "newName", "Integer", Visibility.PUBLIC
+        );
+
+        mockMvc.perform(put("/api/projects/" + projectId + "/classes/" + clazz.getId() + "/attributes/" + attr.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isConflict())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.code").value("MODEL_VERSION_CONFLICT"));
     }
 }
