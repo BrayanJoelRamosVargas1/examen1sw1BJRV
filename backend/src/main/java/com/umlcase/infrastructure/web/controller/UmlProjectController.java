@@ -22,14 +22,17 @@ public class UmlProjectController {
     private final UmlModelRepository repository;
     private final com.umlcase.application.handler.RenameClassHandler renameClassHandler;
     private final com.umlcase.application.handler.AddAttributeHandler addAttributeHandler;
+    private final com.umlcase.application.handler.UpdateAttributeHandler updateAttributeHandler;
 
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
-                                com.umlcase.application.handler.AddAttributeHandler addAttributeHandler) {
+                                com.umlcase.application.handler.AddAttributeHandler addAttributeHandler,
+                                com.umlcase.application.handler.UpdateAttributeHandler updateAttributeHandler) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
+        this.updateAttributeHandler = updateAttributeHandler;
     }
 
     @GetMapping("/model")
@@ -87,5 +90,28 @@ public class UmlProjectController {
         );
 
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(addAttributeHandler.handle(command));
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/classes/{classId}/attributes/{attributeId}")
+    public ResponseEntity<Void> updateAttribute(
+            @PathVariable UUID projectId,
+            @PathVariable UUID classId,
+            @PathVariable UUID attributeId,
+            @org.springframework.web.bind.annotation.RequestBody com.umlcase.infrastructure.web.dto.UpdateAttributeRequest request) {
+
+        var command = com.umlcase.application.command.UpdateAttributeCommand.builder()
+                .commandId(request.commandId() != null ? request.commandId() : UUID.randomUUID())
+                .projectId(projectId)
+                .participantId(request.participantId())
+                .expectedVersion(request.expectedVersion())
+                .classId(classId)
+                .attributeId(attributeId)
+                .name(request.name())
+                .type(request.type())
+                .visibility(request.visibility())
+                .build();
+
+        updateAttributeHandler.handle(command);
+        return ResponseEntity.ok().build();
     }
 }

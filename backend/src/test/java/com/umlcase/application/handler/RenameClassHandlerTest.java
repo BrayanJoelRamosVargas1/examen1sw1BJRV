@@ -302,7 +302,14 @@ class RenameClassHandlerTest {
         }
 
         @Override
-        public void publish(com.umlcase.application.event.AttributeAddedEvent event) {}
+        public void publish(com.umlcase.application.event.AttributeAddedEvent event) {
+            // Ignorado
+        }
+
+        @Override
+        public void publish(com.umlcase.application.event.AttributeUpdatedEvent event) {
+            // Ignorado
+        }
 
         List<ClassRenamedEvent> renamedEvents() { return renamed; }
     }

@@ -57,6 +57,7 @@
               <span class="attr-visibility">{{ attr.visibility }}</span>
               <span class="attr-type">{{ attr.type }}</span>
               <span class="attr-name">{{ attr.name }}</span>
+              <button class="edit-attr-btn" (click)="updateAttribute(cls, attr)" [disabled]="wsStatus !== 'connected'">[editar]</button>
             </li>
           </ul>
         </li>

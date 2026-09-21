@@ -28,4 +28,9 @@ public class SpringUmlEventPublisher implements UmlEventPublisher {
     public void publish(com.umlcase.application.event.AttributeAddedEvent event) {
         applicationEventPublisher.publishEvent(event);
     }
+
+    @Override
+    public void publish(com.umlcase.application.event.AttributeUpdatedEvent event) {
+        applicationEventPublisher.publishEvent(event);
+    }
 }

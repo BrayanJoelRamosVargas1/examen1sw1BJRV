@@ -114,6 +114,20 @@ public final class UmlModel {
     }
 
     /**
+     * Actualiza un atributo existente en una clase.
+     * Delega en UmlClass para la validación de duplicados (case-insensitive).
+     */
+    public UmlAttribute updateAttribute(UUID classId, UUID attributeId, String name, String type, Visibility visibility) {
+        UmlClass targetClass = findClassById(classId)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró la clase con id " + classId));
+        targetClass.updateAttribute(attributeId, name, type, visibility);
+        return targetClass.getAttributes().stream()
+                .filter(a -> a.getId().equals(attributeId))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    /**
      * Agrega una relación entre dos clases.
      * Valida que las clases referenciadas existan en el modelo.
      */

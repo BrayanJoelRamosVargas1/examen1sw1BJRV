@@ -47,6 +47,9 @@ class CorsWebConfigTest {
     @MockBean
     private com.umlcase.application.handler.AddAttributeHandler addAttributeHandler;
 
+    @MockBean
+    private com.umlcase.application.handler.UpdateAttributeHandler updateAttributeHandler;
+
     @Test
     @DisplayName("GET /api/projects/{projectId}/model permite CORS desde localhost:4200")
     void cors_allowsGetFromLocalhost() throws Exception {
@@ -70,7 +73,7 @@ class CorsWebConfigTest {
                         .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "content-type"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:4200"))
-                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PATCH,OPTIONS"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PATCH,PUT,OPTIONS"))
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "content-type"));
     }
 
@@ -86,7 +89,24 @@ class CorsWebConfigTest {
                         .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "content-type"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:4200"))
-                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PATCH,OPTIONS"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PATCH,PUT,OPTIONS"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "content-type"));
+    }
+
+    @Test
+    @DisplayName("OPTIONS /api/projects/{projectId}/classes/{classId}/attributes/{attributeId} autoriza el preflight PUT desde localhost:4200")
+    void cors_allowsPreflightPutFromLocalhost() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+        UUID attributeId = UUID.randomUUID();
+
+        mockMvc.perform(options("/api/projects/" + projectId + "/classes/" + classId + "/attributes/" + attributeId)
+                        .header(HttpHeaders.ORIGIN, "http://localhost:4200")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "content-type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:4200"))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET,POST,PATCH,PUT,OPTIONS"))
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "content-type"));
     }
 }

@@ -32,7 +32,20 @@ export interface AttributeAddedEvent {
   orderIndex: number;
 }
 
-export type UmlEvent = ClassCreatedEvent | ClassRenamedEvent | AttributeAddedEvent;
+export interface AttributeUpdatedEvent {
+  eventId: string;
+  commandId: string;
+  projectId: string;
+  modelVersion: number;
+  classId: string;
+  attributeId: string;
+  name: string;
+  type: string;
+  visibility: string;
+  orderIndex: number;
+}
+
+export type UmlEvent = ClassCreatedEvent | ClassRenamedEvent | AttributeAddedEvent | AttributeUpdatedEvent;
 
 export type WsStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 

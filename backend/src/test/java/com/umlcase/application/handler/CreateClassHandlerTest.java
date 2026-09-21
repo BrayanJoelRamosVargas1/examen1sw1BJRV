@@ -200,6 +200,11 @@ class CreateClassHandlerTest {
             // Ignorado en estos tests
         }
 
+        @Override
+        public void publish(com.umlcase.application.event.AttributeUpdatedEvent event) {
+            // Ignorado en estos tests
+        }
+
         List<ClassCreatedEvent> publishedEvents() { return events; }
     }
 }

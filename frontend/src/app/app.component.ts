@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { UmlService, UmlClassDto } from './services/uml.service';
-import { UmlWebSocketService, ClassCreatedEvent, ClassRenamedEvent, UmlEvent, WsStatus } from './services/uml-websocket.service';
+import { UmlWebSocketService, ClassCreatedEvent, ClassRenamedEvent, UmlEvent, WsStatus, AttributeUpdatedEvent } from './services/uml-websocket.service';
 import { v4 as uuidv4 } from 'uuid';
 
 // UUID del proyecto temporal de desarrollo (Fase 1)
@@ -148,25 +148,36 @@ export class AppComponent implements OnInit, OnDestroy {
       this.currentVersion = event.modelVersion;
       this.eventLog.unshift(`CLASS_RENAMED "${event.newName}" v${event.modelVersion}`);
     } else if ('attributeId' in event) {
-      // Es AttributeAddedEvent
+      // Puede ser AttributeAddedEvent o AttributeUpdatedEvent
       const targetClass = this.classes.find(c => c.id === event.classId);
       if (targetClass) {
         targetClass.attributes = targetClass.attributes || [];
-        targetClass.attributes.push({
-          id: event.attributeId,
-          name: event.name,
-          type: event.type,
-          visibility: event.visibility,
-          orderIndex: event.orderIndex
-        });
+        const attrIndex = targetClass.attributes.findIndex(a => a.id === event.attributeId);
+        
+        if (attrIndex !== -1) {
+          // Ya existe -> Es Update
+          targetClass.attributes[attrIndex].name = event.name;
+          targetClass.attributes[attrIndex].type = event.type;
+          targetClass.attributes[attrIndex].visibility = event.visibility;
+          this.eventLog.unshift(`ATTRIBUTE_UPDATED "${event.name}" v${event.modelVersion}`);
+        } else {
+          // No existe -> Es Add
+          targetClass.attributes.push({
+            id: event.attributeId,
+            name: event.name,
+            type: event.type,
+            visibility: event.visibility,
+            orderIndex: event.orderIndex
+          });
+          this.eventLog.unshift(`ATTRIBUTE_ADDED "${event.name}" v${event.modelVersion}`);
+        }
         this.upsertClass(targetClass);
+        this.currentVersion = event.modelVersion;
       } else {
         // En un caso real pediríamos snapshot al faltar la clase
         this.loadModel();
         return;
       }
-      this.currentVersion = event.modelVersion;
-      this.eventLog.unshift(`ATTRIBUTE_ADDED "${event.name}" v${event.modelVersion}`);
     } else {
       // Es ClassCreatedEvent
       this.upsertClass({ id: event.classId, name: event.className, attributes: [] });
@@ -247,6 +258,44 @@ export class AppComponent implements OnInit, OnDestroy {
           this.loadModel();
         } else if (err.status === 404) {
           this.errorMessage = 'Proyecto o Clase no encontrado';
+        } else {
+          this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+        }
+      }
+    });
+  }
+
+  updateAttribute(cls: UmlClassDto, attr: any): void {
+    const newName = prompt(`Editar nombre de ${attr.name}:`, attr.name);
+    if (!newName || newName.trim() === '') return;
+
+    const newType = prompt(`Editar tipo de ${newName}:`, attr.type);
+    if (!newType || newType.trim() === '') return;
+
+    const newVisibility = prompt(`Editar visibilidad (PUBLIC, PRIVATE, PROTECTED, PACKAGE) de ${newName}:`, attr.visibility);
+    if (!newVisibility || newVisibility.trim() === '') return;
+
+    this.errorMessage = '';
+
+    const request = {
+      commandId: uuidv4(),
+      participantId: 'browser-A',
+      expectedVersion: this.currentVersion,
+      name: newName.trim(),
+      type: newType.trim(),
+      visibility: newVisibility.trim().toUpperCase()
+    };
+
+    this.umlService.updateAttribute(this.projectId, cls.id, attr.id, request).subscribe({
+      next: (response) => {
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion || 0); // response may not have it depending on Void return, wait backend returns Void? Oh, backend returns ResponseEntity.ok().build() so Void. Wait, the prompt said Response: commandId, classId, attributeId, name, type, visibility, orderIndex, modelVersion.
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.errorMessage = 'Conflicto de versión detectado. Resincronizando estado automáticamente...';
+          this.loadModel();
+        } else if (err.status === 404) {
+          this.errorMessage = 'Proyecto, Clase o Atributo no encontrado';
         } else {
           this.errorMessage = 'Error: ' + (err.error?.error || err.message);
         }

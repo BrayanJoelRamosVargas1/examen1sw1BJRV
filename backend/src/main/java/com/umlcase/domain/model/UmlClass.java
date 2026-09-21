@@ -71,6 +71,28 @@ public final class UmlClass {
     }
 
     /**
+     * Actualiza un atributo existente.
+     * Rechaza la actualización si el nuevo nombre colisiona con otro atributo (case-insensitive).
+     */
+    public void updateAttribute(UUID attributeId, String newName, String newType, Visibility newVisibility) {
+        UmlAttribute target = attributes.stream()
+                .filter(a -> a.getId().equals(attributeId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("El atributo con id " + attributeId + " no existe en la clase " + this.name));
+        
+        boolean duplicate = attributes.stream()
+                .anyMatch(a -> !a.getId().equals(attributeId) && a.getName().equalsIgnoreCase(newName));
+        if (duplicate) {
+            throw new IllegalArgumentException(
+                "Ya existe otro atributo con nombre '" + newName + "' en la clase '" + this.name + "'");
+        }
+        
+        target.rename(newName);
+        target.changeType(newType);
+        target.changeVisibility(newVisibility);
+    }
+
+    /**
      * Agrega una operación a la clase.
      * UML permite overloading, por lo que se acepta mismo nombre si los
      * parámetros son diferentes. En Fase 0 simplemente los agrega.

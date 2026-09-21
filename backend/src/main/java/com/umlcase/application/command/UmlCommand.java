@@ -42,7 +42,8 @@ public sealed interface UmlCommand permits
         UmlCommand.RemoveOperation,
         UmlCommand.AddRelationship,
         UmlCommand.RemoveRelationship,
-        UmlCommand.MoveNode {
+        UmlCommand.MoveNode,
+        UpdateAttributeCommand {
 
     /** Id único de este comando. */
     UUID commandId();

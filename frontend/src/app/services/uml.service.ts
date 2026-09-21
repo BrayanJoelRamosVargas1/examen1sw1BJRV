@@ -85,4 +85,17 @@ export class UmlService {
       request
     );
   }
+
+  updateAttribute(
+    projectId: string,
+    classId: string,
+    attributeId: string,
+    request: any
+  ): Observable<any> {
+    return this.http.put(
+      `${API}/projects/${projectId}/classes/${classId}/attributes/${attributeId}`,
+      request,
+      { responseType: 'text' }
+    );
+  }
 }
