@@ -33,7 +33,7 @@ public class RenameClassHandler {
         // 2. Validar versión optimista (expectedVersion)
         if (model.getVersion() != command.expectedVersion()) {
             throw new ModelVersionConflictException(
-                    "Conflicto de versión. Esperada: " + command.expectedVersion()
+                    "MODEL_VERSION_CONFLICT. Esperada: " + command.expectedVersion()
                     + ", Actual: " + model.getVersion());
         }
 
