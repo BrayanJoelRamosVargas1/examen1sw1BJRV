@@ -7,6 +7,7 @@ const API = 'http://localhost:8080/api';
 export interface UmlClassDto {
   id: string;
   name: string;
+  attributes?: any[]; // or define UmlAttributeDto if needed
 }
 
 export interface UmlModelResponse {
@@ -70,6 +71,17 @@ export class UmlService {
   ): Observable<RenameClassResponse> {
     return this.http.patch<RenameClassResponse>(
       `${API}/projects/${projectId}/classes/${classId}`,
+      request
+    );
+  }
+
+  addAttribute(
+    projectId: string,
+    classId: string,
+    request: any
+  ): Observable<any> {
+    return this.http.post<any>(
+      `${API}/projects/${projectId}/classes/${classId}/attributes`,
       request
     );
   }

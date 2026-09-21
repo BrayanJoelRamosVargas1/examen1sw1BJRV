@@ -140,15 +140,36 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // event.modelVersion === currentVersion + 1 → aplicar incrementalmente
+    // event.modelVersion === currentVersion + 1 -> aplicar incrementalmente
     if ('newName' in event) {
       // Es ClassRenamedEvent
-      this.upsertClass({ id: event.classId, name: event.newName });
+      const targetClass = this.classes.find(c => c.id === event.classId);
+      this.upsertClass({ id: event.classId, name: event.newName, attributes: targetClass ? targetClass.attributes : [] });
       this.currentVersion = event.modelVersion;
       this.eventLog.unshift(`CLASS_RENAMED "${event.newName}" v${event.modelVersion}`);
+    } else if ('attributeId' in event) {
+      // Es AttributeAddedEvent
+      const targetClass = this.classes.find(c => c.id === event.classId);
+      if (targetClass) {
+        targetClass.attributes = targetClass.attributes || [];
+        targetClass.attributes.push({
+          id: event.attributeId,
+          name: event.name,
+          type: event.type,
+          visibility: event.visibility,
+          orderIndex: event.orderIndex
+        });
+        this.upsertClass(targetClass);
+      } else {
+        // En un caso real pediríamos snapshot al faltar la clase
+        this.loadModel();
+        return;
+      }
+      this.currentVersion = event.modelVersion;
+      this.eventLog.unshift(`ATTRIBUTE_ADDED "${event.name}" v${event.modelVersion}`);
     } else {
       // Es ClassCreatedEvent
-      this.upsertClass({ id: event.classId, name: event.className });
+      this.upsertClass({ id: event.classId, name: event.className, attributes: [] });
       this.currentVersion = event.modelVersion;
       this.eventLog.unshift(`CLASS_CREATED "${event.className}" v${event.modelVersion}`);
     }
@@ -173,7 +194,52 @@ export class AppComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: (response) => {
         this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
-        this.upsertClass({ id: response.classId, name: response.newName });
+        const existing = this.classes.find(c => c.id === response.classId);
+        this.upsertClass({ id: response.classId, name: response.newName, attributes: existing ? existing.attributes : [] });
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.errorMessage = 'Conflicto de versión detectado. Resincronizando estado automáticamente...';
+          this.loadModel();
+        } else if (err.status === 404) {
+          this.errorMessage = 'Proyecto o Clase no encontrado';
+        } else {
+          this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+        }
+      }
+    });
+  }
+
+  addAttribute(cls: UmlClassDto): void {
+    const attrName = prompt('Nombre del nuevo atributo:');
+    if (!attrName || attrName.trim() === '') return;
+    
+    const attrType = prompt('Tipo del atributo (ej: int, String):', 'String');
+    if (!attrType || attrType.trim() === '') return;
+
+    this.errorMessage = '';
+
+    this.umlService.addAttribute(this.projectId, cls.id, {
+      commandId: uuidv4(),
+      participantId: 'browser-A',
+      expectedVersion: this.currentVersion,
+      attributeName: attrName.trim(),
+      attributeType: attrType.trim(),
+      visibility: 'PRIVATE'
+    }).subscribe({
+      next: (response) => {
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+        // The API returns the added attribute, but we rely on WebSocket or full reload if needed.
+        // Actually, we can update local state directly or just let WS handle it.
+        // But for ClassCreated we did local update. 
+        // For attribute we just append it if not already there, but wait, `upsertClass` only expects class.
+        // Let's just reload the model or append locally.
+        const clsToUpdate = this.classes.find(c => c.id === cls.id);
+        if (clsToUpdate) {
+            clsToUpdate.attributes = clsToUpdate.attributes || [];
+            clsToUpdate.attributes.push(response.attribute);
+            this.upsertClass(clsToUpdate);
+        }
       },
       error: (err) => {
         if (err.status === 409) {

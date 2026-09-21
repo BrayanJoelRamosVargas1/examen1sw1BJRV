@@ -171,3 +171,44 @@ h2 {
   font-style: italic;
   font-size: 0.85rem;
 }
+
+.class-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rename-btn, .add-attr-btn {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.3rem;
+  background: #333;
+  color: #fff;
+  border: 1px solid #555;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.rename-btn:hover, .add-attr-btn:hover { background: #444; }
+.rename-btn:disabled, .add-attr-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.attribute-list {
+  list-style-type: none;
+  padding-left: 1rem;
+  margin-top: 0.2rem;
+}
+
+.attribute-item {
+  font-size: 0.8rem;
+  color: #ccc;
+}
+
+.attribute-item::before {
+  content: '- ';
+  color: #888;
+}
+
+.attr-visibility { color: #c678dd; margin-right: 0.3rem; font-size: 0.75rem; }
+.attr-type { color: #56b6c2; margin-right: 0.3rem; font-size: 0.75rem; }
+.attr-name { color: #e5c07b; }
+

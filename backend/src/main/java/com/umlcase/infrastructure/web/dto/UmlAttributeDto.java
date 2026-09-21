@@ -1,10 +1,11 @@
 package com.umlcase.infrastructure.web.dto;
 
-import java.util.List;
 import java.util.UUID;
 
-public record UmlClassDto(
+public record UmlAttributeDto(
     UUID id,
     String name,
-    List<UmlAttributeDto> attributes
+    String type,
+    String visibility,
+    int orderIndex
 ) {}

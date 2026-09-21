@@ -301,6 +301,9 @@ class RenameClassHandlerTest {
             renamed.add(event);
         }
 
+        @Override
+        public void publish(com.umlcase.application.event.AttributeAddedEvent event) {}
+
         List<ClassRenamedEvent> renamedEvents() { return renamed; }
     }
 }

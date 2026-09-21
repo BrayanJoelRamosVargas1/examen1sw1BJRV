@@ -181,4 +181,30 @@ class JpaUmlModelRepositoryAdapterIT {
                 .as("La versión de la raíz debe incrementar tras modificar un hijo")
                 .isGreaterThan(versionAfterCreate);
     }
+
+    @Test
+    @DisplayName("Guarda y recupera los atributos manteniendo el orden de orderIndex")
+    void save_withAttributes_preservesOrderIndex() {
+        UUID projectId = UUID.randomUUID();
+        UmlModel model = UmlModel.create(projectId);
+        UmlClass cliente = UmlClass.create("Cliente");
+        model.addClass(cliente);
+        
+        // Atributo 1 (index 1)
+        cliente.addAttribute(new com.umlcase.domain.model.UmlAttribute(UUID.randomUUID(), "attr2", "String", com.umlcase.domain.model.Visibility.PRIVATE, 1));
+        // Atributo 2 (index 0)
+        cliente.addAttribute(new com.umlcase.domain.model.UmlAttribute(UUID.randomUUID(), "attr1", "int", com.umlcase.domain.model.Visibility.PUBLIC, 0));
+
+        repository.save(model);
+
+        UmlModel loaded = repository.findByProjectId(projectId).orElseThrow();
+        UmlClass loadedClass = loaded.getClasses().iterator().next();
+
+        java.util.List<com.umlcase.domain.model.UmlAttribute> attrs = loadedClass.getAttributes();
+        assertThat(attrs).hasSize(2);
+        assertThat(attrs.get(0).getName()).isEqualTo("attr1");
+        assertThat(attrs.get(0).getOrderIndex()).isEqualTo(0);
+        assertThat(attrs.get(1).getName()).isEqualTo("attr2");
+        assertThat(attrs.get(1).getOrderIndex()).isEqualTo(1);
+    }
 }

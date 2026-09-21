@@ -46,9 +46,19 @@
       <h2>Clases del modelo ({{ classes.length }})</h2>
       <ul class="class-list" *ngIf="classes.length > 0; else emptyClasses">
         <li *ngFor="let cls of classes" class="class-item">
-          <span class="class-name">{{ cls.name }}</span>
-          <code class="class-id">{{ cls.id }}</code>
-          <button class="rename-btn" (click)="renameClass(cls)" [disabled]="wsStatus !== 'connected'">Renombrar</button>
+          <div class="class-header">
+            <span class="class-name">{{ cls.name }}</span>
+            <code class="class-id">{{ cls.id }}</code>
+            <button class="rename-btn" (click)="renameClass(cls)" [disabled]="wsStatus !== 'connected'">Renombrar</button>
+            <button class="add-attr-btn" (click)="addAttribute(cls)" [disabled]="wsStatus !== 'connected'">Añadir Atributo</button>
+          </div>
+          <ul class="attribute-list" *ngIf="cls.attributes && cls.attributes.length > 0">
+            <li *ngFor="let attr of cls.attributes" class="attribute-item">
+              <span class="attr-visibility">{{ attr.visibility }}</span>
+              <span class="attr-type">{{ attr.type }}</span>
+              <span class="attr-name">{{ attr.name }}</span>
+            </li>
+          </ul>
         </li>
       </ul>
       <ng-template #emptyClasses>

@@ -81,3 +81,25 @@ Esta matriz garantiza la regla del docente:
 | F1-06 | Broadcast STOMP a clientes | `[FASE 1]` | Demo manual A/B | `[OK]` |
 | F1-07 | Frontend Angular reactivo | `[FASE 1]` | Demo manual A/B | `[OK]` |
 | F1-08 | Persistencia comprobable tras F5 | `[FASE 1]` | Demo manual F5 | `[OK]` |
+
+---
+
+## Componentes de Fase 2.1 (Rename)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F2.1-01 | PATCH `/api/projects/{projectId}/classes/{classId}/rename` | `[FASE 2.1]` | `RenameClassApiIT` | `[OK]` |
+| F2.1-02 | STOMP broadcast CLASS_RENAMED | `[FASE 2.1]` | Demo A/B | `[OK]` |
+| F2.1-03 | Frontend / Angular actualización | `[FASE 2.1]` | Demo A/B | `[OK]` |
+| F2.1-04 | 409 Conflict desacoplado | `[FASE 2.1]` | `RenameClassHandlerTest` | `[OK]` |
+
+---
+
+## Componentes de Fase 2.2.1 (Add Attribute)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F2.2.1-01 | POST `/api/projects/{projectId}/classes/{classId}/attributes` | `[FASE 2.2.1]` | `AddAttributeApiIT` | `[OK]` |
+| F2.2.1-02 | Persistencia V3 (uml_attributes) y orderIndex | `[FASE 2.2.1]` | `AddAttributeTransactionalIT` | `[OK]` |
+| F2.2.1-03 | STOMP broadcast ATTRIBUTE_ADDED | `[FASE 2.2.1]` | Demo A/B | `[OK]` |
+| F2.2.1-04 | Frontend visualiza atributos | `[FASE 2.2.1]` | Demo A/B y F5 | `[OK]` |

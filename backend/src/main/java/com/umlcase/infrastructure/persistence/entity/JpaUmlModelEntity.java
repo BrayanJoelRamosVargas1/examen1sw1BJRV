@@ -35,7 +35,7 @@ public class JpaUmlModelEntity {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "model_id", nullable = false)
-    private List<JpaUmlClassEntity> classes = new ArrayList<>();
+    private java.util.Set<JpaUmlClassEntity> classes = new java.util.LinkedHashSet<>();
 
     public void addClass(JpaUmlClassEntity classEntity) {
         classes.add(classEntity);

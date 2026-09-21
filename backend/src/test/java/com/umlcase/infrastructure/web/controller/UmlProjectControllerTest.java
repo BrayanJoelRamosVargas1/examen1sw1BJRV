@@ -46,6 +46,9 @@ class UmlProjectControllerTest {
     @MockBean
     private com.umlcase.application.handler.RenameClassHandler renameClassHandler;
 
+    @MockBean
+    private com.umlcase.application.handler.AddAttributeHandler addAttributeHandler;
+
     // ─── Test del comportamiento correcto ─────────────────────────────────────
 
     @Test
@@ -57,6 +60,7 @@ class UmlProjectControllerTest {
 
         UmlModel model = new UmlModel(modelInternalId, projectId, 0L);
         UmlClass cliente = UmlClass.create("Cliente");
+        cliente.addAttribute(new com.umlcase.domain.model.UmlAttribute(UUID.randomUUID(), "attrTest", "int", com.umlcase.domain.model.Visibility.PUBLIC, 0));
         model.addClass(cliente);
 
         // El controller DEBE usar findByProjectId, NO findById
@@ -70,7 +74,12 @@ class UmlProjectControllerTest {
                 .andExpect(jsonPath("$.projectId").value(projectId.toString()))
                 .andExpect(jsonPath("$.version").value(0))
                 .andExpect(jsonPath("$.classes").isArray())
-                .andExpect(jsonPath("$.classes[0].name").value("Cliente"));
+                .andExpect(jsonPath("$.classes[0].name").value("Cliente"))
+                .andExpect(jsonPath("$.classes[0].attributes").isArray())
+                .andExpect(jsonPath("$.classes[0].attributes[0].name").value("attrTest"))
+                .andExpect(jsonPath("$.classes[0].attributes[0].type").value("int"))
+                .andExpect(jsonPath("$.classes[0].attributes[0].visibility").value("PUBLIC"))
+                .andExpect(jsonPath("$.classes[0].attributes[0].orderIndex").value(0));
 
         // Verificación crítica del bug: debe usarse findByProjectId
         verify(repository, times(1)).findByProjectId(projectId);

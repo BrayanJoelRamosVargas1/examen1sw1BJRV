@@ -5,4 +5,5 @@ import com.umlcase.application.event.ClassCreatedEvent;
 public interface UmlEventPublisher {
     void publish(com.umlcase.application.event.ClassCreatedEvent event);
     void publish(com.umlcase.application.event.ClassRenamedEvent event);
+    void publish(com.umlcase.application.event.AttributeAddedEvent event);
 }

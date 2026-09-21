@@ -21,12 +21,15 @@ public class UmlProjectController {
 
     private final UmlModelRepository repository;
     private final com.umlcase.application.handler.RenameClassHandler renameClassHandler;
+    private final com.umlcase.application.handler.AddAttributeHandler addAttributeHandler;
 
 
     public UmlProjectController(UmlModelRepository repository,
-                                com.umlcase.application.handler.RenameClassHandler renameClassHandler) {
+                                com.umlcase.application.handler.RenameClassHandler renameClassHandler,
+                                com.umlcase.application.handler.AddAttributeHandler addAttributeHandler) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
+        this.addAttributeHandler = addAttributeHandler;
     }
 
     @GetMapping("/model")
@@ -35,7 +38,13 @@ public class UmlProjectController {
                 .orElseThrow(() -> new ProjectNotFoundException("Proyecto no encontrado: " + projectId));
 
         List<UmlClassDto> classes = model.getClasses().stream()
-                .map(c -> new UmlClassDto(c.getId(), c.getName()))
+                .map(c -> {
+                    List<com.umlcase.infrastructure.web.dto.UmlAttributeDto> attrs = c.getAttributes().stream()
+                            .map(a -> new com.umlcase.infrastructure.web.dto.UmlAttributeDto(
+                                    a.getId(), a.getName(), a.getType(), a.getVisibility().name(), a.getOrderIndex()
+                            )).collect(Collectors.toList());
+                    return new UmlClassDto(c.getId(), c.getName(), attrs);
+                })
                 .collect(Collectors.toList());
 
         UmlModelDto dto = new UmlModelDto(model.getProjectId(), model.getVersion(), classes);
@@ -58,5 +67,25 @@ public class UmlProjectController {
         );
 
         return ResponseEntity.ok(renameClassHandler.handle(command));
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/classes/{classId}/attributes")
+    public ResponseEntity<com.umlcase.infrastructure.web.dto.AddAttributeResponse> addAttribute(
+            @PathVariable UUID projectId,
+            @PathVariable UUID classId,
+            @org.springframework.web.bind.annotation.RequestBody @jakarta.validation.Valid com.umlcase.infrastructure.web.dto.AddAttributeRequest request) {
+
+        var command = new com.umlcase.application.command.UmlCommand.AddAttribute(
+                request.commandId() != null ? request.commandId() : UUID.randomUUID(),
+                projectId,
+                request.participantId(),
+                request.expectedVersion(),
+                classId,
+                request.attributeName(),
+                request.attributeType(),
+                com.umlcase.domain.model.Visibility.valueOf(request.visibility())
+        );
+
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(addAttributeHandler.handle(command));
     }
 }

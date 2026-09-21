@@ -96,6 +96,24 @@ public final class UmlModel {
     }
 
     /**
+     * Agrega un atributo a una clase existente.
+     * Delega en UmlClass para la validación de duplicados y asigna el orderIndex al final.
+     */
+    public UmlAttribute addAttribute(UUID classId, String name, String type, Visibility visibility) {
+        UmlClass targetClass = findClassById(classId)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró la clase con id " + classId));
+        
+        int nextOrderIndex = targetClass.getAttributes().stream()
+                .mapToInt(UmlAttribute::getOrderIndex)
+                .max()
+                .orElse(-1) + 1;
+                
+        UmlAttribute newAttribute = new UmlAttribute(UUID.randomUUID(), name, type, visibility, nextOrderIndex);
+        targetClass.addAttribute(newAttribute);
+        return newAttribute;
+    }
+
+    /**
      * Agrega una relación entre dos clases.
      * Valida que las clases referenciadas existan en el modelo.
      */

@@ -19,7 +19,20 @@ export interface ClassRenamedEvent {
   modelVersion: number;
 }
 
-export type UmlEvent = ClassCreatedEvent | ClassRenamedEvent;
+export interface AttributeAddedEvent {
+  eventId: string;
+  commandId: string;
+  projectId: string;
+  modelVersion: number;
+  classId: string;
+  attributeId: string;
+  name: string;
+  type: string;
+  visibility: string;
+  orderIndex: number;
+}
+
+export type UmlEvent = ClassCreatedEvent | ClassRenamedEvent | AttributeAddedEvent;
 
 export type WsStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
