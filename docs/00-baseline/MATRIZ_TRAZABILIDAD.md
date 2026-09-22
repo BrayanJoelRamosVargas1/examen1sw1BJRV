@@ -160,3 +160,16 @@ o-cache | [FASE 2.3.2] | Demo F5 A/B | [OK] |
 | F2.3.3-02 | OperationRemovedEvent + STOMP broadcast | [FASE 2.3.3] | RemoveOperationStompIT | [OK] |
 | F2.3.3-03 | Frontend tipado de eventos sin casts unsafe | [FASE 2.3.3] | Angular build | [OK] |
 | F2.3.3-04 | Optimistic Locking @Version N+1 y orphan removal en cascade | [FASE 2.3.3] | RemoveOperationTransactionalIT | [OK] |
+
+---
+
+## Componentes de Fase 2.4 (NodeView / Persistencia Layout)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F2.4-01 | PUT /api/projects/{projectId}/diagram/nodes | [FASE 2.4] | SaveNodeViewApiIT | [OK] |
+| F2.4-02 | GET /api/projects/{projectId}/diagram (read-only) | [FASE 2.4] | SaveNodeViewApiIT | [OK] |
+| F2.4-03 | Entidad separada JpaUmlDiagramLayoutEntity | [FASE 2.4] | DB Migration V5 | [OK] |
+| F2.4-04 | Optimistic Locking @Version (409 Conflict) en Layout | [FASE 2.4] | UmlDiagramLayoutRepositoryAdapterIT | [OK] |
+| F2.4-05 | Invarianza: modelVersion inmutable en mutacin visual | [FASE 2.4] | SaveNodeViewTransactionalIT | [OK] |
+

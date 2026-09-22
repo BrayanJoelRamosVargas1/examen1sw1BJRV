@@ -24,6 +24,12 @@ public class GlobalExceptionHandler {
                 .body(new com.umlcase.infrastructure.web.dto.ApiErrorResponse("MODEL_VERSION_CONFLICT", ex.getMessage()));
     }
 
+    @ExceptionHandler(com.umlcase.domain.exception.DiagramVersionConflictException.class)
+    public ResponseEntity<?> handleDiagramVersionConflict(com.umlcase.domain.exception.DiagramVersionConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new com.umlcase.infrastructure.web.dto.ApiErrorResponse("LAYOUT_VERSION_CONFLICT", ex.getMessage()));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

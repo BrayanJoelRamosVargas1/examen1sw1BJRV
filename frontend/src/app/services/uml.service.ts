@@ -244,4 +244,34 @@ export class UmlService {
       body: request
     });
   }
+
+  // DIAGRAM LAYOUT
+
+  getDiagram(projectId: string): Observable<any> {
+    return this.http.get<any>(`${API}/projects/${projectId}/diagram`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0'
+      }
+    });
+  }
+
+  saveNodeView(
+    projectId: string,
+    classId: string,
+    commandId: string,
+    participantId: string,
+    expectedLayoutVersion: number,
+    x: number,
+    y: number
+  ): Observable<any> {
+    return this.http.put<any>(`${API}/projects/${projectId}/diagram/nodes/${classId}`, {
+      commandId,
+      participantId,
+      expectedLayoutVersion,
+      x,
+      y
+    });
+  }
 }
