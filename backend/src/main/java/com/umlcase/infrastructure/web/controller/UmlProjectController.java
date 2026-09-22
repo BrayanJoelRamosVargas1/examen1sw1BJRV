@@ -27,6 +27,7 @@ public class UmlProjectController {
     private final com.umlcase.application.handler.AddOperationHandler addOperationHandler;
     private final com.umlcase.application.handler.UpdateOperationHandler updateOperationHandler;
     private final com.umlcase.application.handler.RemoveOperationHandler removeOperationHandler;
+    private final com.umlcase.application.port.in.AddRelationshipUseCase addRelationshipUseCase;
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
@@ -35,7 +36,8 @@ public class UmlProjectController {
                                 com.umlcase.application.handler.RemoveAttributeHandler removeAttributeHandler,
                                 com.umlcase.application.handler.AddOperationHandler addOperationHandler,
                                 com.umlcase.application.handler.UpdateOperationHandler updateOperationHandler,
-                                com.umlcase.application.handler.RemoveOperationHandler removeOperationHandler) {
+                                com.umlcase.application.handler.RemoveOperationHandler removeOperationHandler,
+                                com.umlcase.application.port.in.AddRelationshipUseCase addRelationshipUseCase) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
@@ -44,6 +46,7 @@ public class UmlProjectController {
         this.addOperationHandler = addOperationHandler;
         this.updateOperationHandler = updateOperationHandler;
         this.removeOperationHandler = removeOperationHandler;
+        this.addRelationshipUseCase = addRelationshipUseCase;
     }
 
     @GetMapping("/model")
@@ -73,7 +76,18 @@ public class UmlProjectController {
                 })
                 .collect(Collectors.toList());
 
-        UmlModelDto dto = new UmlModelDto(model.getProjectId(), model.getVersion(), classes);
+        List<com.umlcase.infrastructure.web.dto.UmlRelationshipDto> relationships = model.getRelationships().stream()
+                .map(r -> new com.umlcase.infrastructure.web.dto.UmlRelationshipDto(
+                        r.getId(),
+                        r.getType().name(),
+                        r.getSourceClassId(),
+                        r.getTargetClassId(),
+                        r.getSourceMultiplicity(),
+                        r.getTargetMultiplicity()
+                ))
+                .collect(Collectors.toList());
+
+        UmlModelDto dto = new UmlModelDto(model.getProjectId(), model.getVersion(), classes, relationships);
         return ResponseEntity.ok()
                 .header("Cache-Control", "no-cache, no-store, must-revalidate")
                 .header("Pragma", "no-cache")
@@ -273,5 +287,41 @@ public class UmlProjectController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/relationships")
+    public ResponseEntity<com.umlcase.infrastructure.web.dto.AddRelationshipResponse> addRelationship(
+            @PathVariable UUID projectId,
+            @org.springframework.web.bind.annotation.RequestBody com.umlcase.infrastructure.web.dto.AddRelationshipRequest request) {
+
+        var command = new com.umlcase.application.command.UmlCommand.AddRelationship(
+                request.commandId() != null ? request.commandId() : UUID.randomUUID(),
+                projectId,
+                request.participantId(),
+                request.expectedVersion(),
+                com.umlcase.domain.model.RelationshipType.valueOf(request.type()),
+                request.sourceClassId(),
+                request.targetClassId(),
+                request.sourceMultiplicity(),
+                request.targetMultiplicity()
+        );
+
+        var event = addRelationshipUseCase.handle(command);
+
+        var response = new com.umlcase.infrastructure.web.dto.AddRelationshipResponse(
+                event.commandId(),
+                event.relationshipId(),
+                event.modelVersion(),
+                new com.umlcase.infrastructure.web.dto.UmlRelationshipDto(
+                        event.relationshipId(),
+                        event.relationshipType().name(),
+                        event.sourceClassId(),
+                        event.targetClassId(),
+                        event.sourceMultiplicity(),
+                        event.targetMultiplicity()
+                )
+        );
+
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(response);
     }
 }

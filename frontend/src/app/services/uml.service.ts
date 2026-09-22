@@ -11,10 +11,20 @@ export interface UmlClassDto {
   operations?: any[];
 }
 
+export interface UmlRelationshipDto {
+  id: string;
+  type: string;
+  sourceClassId: string;
+  targetClassId: string;
+  sourceMultiplicity: string;
+  targetMultiplicity: string;
+}
+
 export interface UmlModelResponse {
   projectId: string;
   version: number;
   classes: UmlClassDto[];
+  relationships?: UmlRelationshipDto[];
 }
 
 export interface RemoveOperationRequest {
@@ -145,6 +155,24 @@ export interface UpdateOperationResponse {
   modelVersion: number;
 }
 
+export interface AddRelationshipRequest {
+  commandId: string;
+  participantId: string;
+  expectedVersion: number;
+  type: string;
+  sourceClassId: string;
+  targetClassId: string;
+  sourceMultiplicity?: string;
+  targetMultiplicity?: string;
+}
+
+export interface AddRelationshipResponse {
+  commandId: string;
+  relationshipId: string;
+  modelVersion: number;
+  relationship: UmlRelationshipDto;
+}
+
 export interface SaveNodeViewResponse {
   commandId: string;
   classId: string;
@@ -263,6 +291,16 @@ export class UmlService {
     return this.http.request<RemoveOperationResponse>('delete', `${API}/projects/${projectId}/classes/${classId}/operations/${operationId}`, {
       body: request
     });
+  }
+
+  addRelationship(
+    projectId: string,
+    request: AddRelationshipRequest
+  ): Observable<AddRelationshipResponse> {
+    return this.http.post<AddRelationshipResponse>(
+      `${API}/projects/${projectId}/relationships`,
+      request
+    );
   }
 
   // DIAGRAM LAYOUT

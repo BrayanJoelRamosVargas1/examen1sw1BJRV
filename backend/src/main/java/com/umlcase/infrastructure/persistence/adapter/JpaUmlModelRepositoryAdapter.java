@@ -60,6 +60,35 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                 entity.getClasses().removeIf(c ->
                     model.getClasses().stream().noneMatch(mc -> mc.getId().equals(c.getId()))
                 );
+
+                // Merge relationships
+                if (entity.getRelationships() == null) {
+                    entity.setRelationships(new java.util.LinkedHashSet<>());
+                }
+                entity.getRelationships().removeIf(r ->
+                    model.getRelationships().stream().noneMatch(mr -> mr.getId().equals(r.getId()))
+                );
+
+                for (com.umlcase.domain.model.UmlRelationship domainRel : model.getRelationships()) {
+                    Optional<com.umlcase.infrastructure.persistence.entity.JpaUmlRelationshipEntity> existingRel = entity.getRelationships().stream()
+                        .filter(r -> r.getId().equals(domainRel.getId()))
+                        .findFirst();
+
+                    if (existingRel.isPresent()) {
+                        existingRel.get().setType(domainRel.getType().name());
+                        existingRel.get().setSourceClassId(domainRel.getSourceClassId());
+                        existingRel.get().setTargetClassId(domainRel.getTargetClassId());
+                        existingRel.get().setSourceMultiplicity(domainRel.getSourceMultiplicity());
+                        existingRel.get().setTargetMultiplicity(domainRel.getTargetMultiplicity());
+                    } else {
+                        com.umlcase.infrastructure.persistence.entity.JpaUmlRelationshipEntity newRel = new com.umlcase.infrastructure.persistence.entity.JpaUmlRelationshipEntity(
+                                domainRel.getId(), entity, domainRel.getType().name(),
+                                domainRel.getSourceClassId(), domainRel.getTargetClassId(),
+                                domainRel.getSourceMultiplicity(), domainRel.getTargetMultiplicity()
+                        );
+                        entity.addRelationship(newRel);
+                    }
+                }
                 // Update or Add
                 for (UmlClass domainClass : model.getClasses()) {
                     Optional<JpaUmlClassEntity> existingChild = entity.getClasses().stream()
@@ -68,7 +97,7 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                     if (existingChild.isPresent()) {
                         JpaUmlClassEntity classEntity = existingChild.get();
                         classEntity.setName(domainClass.getName());
-                        
+
                         // Merge attributes
                         if (classEntity.getAttributes() == null) {
                             classEntity.setAttributes(new java.util.LinkedHashSet<>());
@@ -111,7 +140,7 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                                 existingOp.get().setReturnType(domainOp.getReturnType());
                                 existingOp.get().setVisibility(domainOp.getVisibility().name());
                                 existingOp.get().setOrderIndex(domainOp.getOrderIndex());
-                                
+
                                 if (existingOp.get().getParameters() == null) {
                                     existingOp.get().setParameters(new java.util.LinkedHashSet<>());
                                 }
@@ -144,7 +173,7 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                                 newOp.setReturnType(domainOp.getReturnType());
                                 newOp.setVisibility(domainOp.getVisibility().name());
                                 newOp.setOrderIndex(domainOp.getOrderIndex());
-                                
+
                                 java.util.Set<com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity> paramEntities = new java.util.LinkedHashSet<>();
                                 int paramIndex = 0;
                                 for (com.umlcase.domain.model.UmlParameter domainParam : domainOp.getParameters()) {
@@ -171,7 +200,7 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                             attrEntity.setOrderIndex(a.getOrderIndex());
                             return attrEntity;
                         }).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
-                        
+
                         newChild.setOperations(domainClass.getOperations().stream().map(op -> {
                             com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity opEntity = new com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity();
                             opEntity.setId(op.getId());
@@ -179,7 +208,7 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                             opEntity.setReturnType(op.getReturnType());
                             opEntity.setVisibility(op.getVisibility().name());
                             opEntity.setOrderIndex(op.getOrderIndex());
-                            
+
                             java.util.Set<com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity> paramEntities = new java.util.LinkedHashSet<>();
                             int paramIndex = 0;
                             for (com.umlcase.domain.model.UmlParameter domainParam : op.getParameters()) {
@@ -239,7 +268,7 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                                     attrEntity.getOrderIndex()
                             )));
                 }
-                
+
                 if (classEntity.getOperations() != null) {
                     classEntity.getOperations().stream()
                             .sorted(java.util.Comparator.comparingInt(com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity::getOrderIndex))
@@ -267,6 +296,20 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                 model.addClass(umlClass);
             }
         }
+
+        if (entity.getRelationships() != null) {
+            for (com.umlcase.infrastructure.persistence.entity.JpaUmlRelationshipEntity relEntity : entity.getRelationships()) {
+                com.umlcase.domain.model.UmlRelationship umlRelationship = new com.umlcase.domain.model.UmlRelationship(
+                        relEntity.getId(),
+                        com.umlcase.domain.model.RelationshipType.valueOf(relEntity.getType()),
+                        relEntity.getSourceClassId(),
+                        relEntity.getTargetClassId(),
+                        relEntity.getSourceMultiplicity(),
+                        relEntity.getTargetMultiplicity()
+                );
+                model.addRelationship(umlRelationship);
+            }
+        }
         return model;
     }
 
@@ -289,7 +332,7 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                 attrEntity.setOrderIndex(a.getOrderIndex());
                 return attrEntity;
             }).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
-            
+
             classEntity.setOperations(c.getOperations().stream().map(op -> {
                 com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity opEntity = new com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity();
                 opEntity.setId(op.getId());
@@ -297,7 +340,7 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                 opEntity.setReturnType(op.getReturnType());
                 opEntity.setVisibility(op.getVisibility().name());
                 opEntity.setOrderIndex(op.getOrderIndex());
-                
+
                 java.util.Set<com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity> paramEntities = new java.util.LinkedHashSet<>();
                 int paramIndex = 0;
                 for (com.umlcase.domain.model.UmlParameter domainParam : op.getParameters()) {
@@ -310,8 +353,16 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                 }
                 return opEntity;
             }).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
-            
+
             return classEntity;
+        }).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
+
+        entity.setRelationships(model.getRelationships().stream().map(r -> {
+            return new com.umlcase.infrastructure.persistence.entity.JpaUmlRelationshipEntity(
+                    r.getId(), entity, r.getType().name(),
+                    r.getSourceClassId(), r.getTargetClassId(),
+                    r.getSourceMultiplicity(), r.getTargetMultiplicity()
+            );
         }).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
 
         return entity;

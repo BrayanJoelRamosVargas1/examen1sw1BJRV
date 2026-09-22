@@ -37,8 +37,16 @@ public class JpaUmlModelEntity {
     @JoinColumn(name = "model_id", nullable = false)
     private java.util.Set<JpaUmlClassEntity> classes = new java.util.LinkedHashSet<>();
 
+    @OneToMany(mappedBy = "model", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.Set<JpaUmlRelationshipEntity> relationships = new java.util.LinkedHashSet<>();
+
     public void addClass(JpaUmlClassEntity classEntity) {
         classes.add(classEntity);
+    }
+
+    public void addRelationship(JpaUmlRelationshipEntity relEntity) {
+        relationships.add(relEntity);
+        relEntity.setModel(this);
     }
 
     public void markModified() {

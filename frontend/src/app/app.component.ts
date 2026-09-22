@@ -22,8 +22,12 @@ export class AppComponent implements OnInit, OnDestroy {
   currentVersion = 0;
   wsStatus: WsStatus = 'disconnected';
   classes: UmlClassDto[] = [];
+  relationships: any[] = [];
   eventLog: string[] = [];
   newClassName = '';
+  newRelSourceId = '';
+  newRelTargetId = '';
+  newRelType = 'ASSOCIATION';
   errorMessage = '';
 
   // Buffer de eventos que llegan antes de que el GET snapshot termine
@@ -40,7 +44,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private layoutWsSub?: Subscription;
 
   nodePositions: Record<string, { x: number; y: number } | undefined> = {};
-  
+
   draggingClassId: string | null = null;
   dragStartX = 0;
   dragStartY = 0;
@@ -96,6 +100,7 @@ export class AppComponent implements OnInit, OnDestroy {
         // Renderizar snapshot
         this.currentVersion = model.version;
         this.classes = [...model.classes];
+        this.relationships = model.relationships ? [...model.relationships] : [];
         this.snapshotLoaded = true;
 
         // Paso 3: aplicar eventos bufferizados usando la misma regla estricta de secuencia
@@ -109,7 +114,7 @@ export class AppComponent implements OnInit, OnDestroy {
             this.eventBuffer.push(bufferedEvent);
           }
         }
-        
+
         this.applyFallbackPositions();
       },
       error: (err) => {
@@ -128,12 +133,12 @@ export class AppComponent implements OnInit, OnDestroy {
       next: (layout) => {
         if (requestId !== this.layoutSnapshotRequestId) return;
         this.currentLayoutVersion = layout.layoutVersion;
-        
+
         // Asignar posiciones persistidas
         layout.nodeViews.forEach((nv: any) => {
           this.nodePositions[nv.classId] = { x: nv.x, y: nv.y };
         });
-        
+
         this.layoutSnapshotLoaded = true;
         this.applyFallbackPositions();
 
@@ -158,7 +163,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private applyFallbackPositions(): void {
     if (!this.snapshotLoaded || !this.layoutSnapshotLoaded) return;
-    
+
     let index = 0;
     for (const cls of this.classes) {
       if (!this.nodePositions[cls.id]) {
@@ -348,6 +353,21 @@ export class AppComponent implements OnInit, OnDestroy {
       this.upsertClass({ id: event.classId, name: event.className, attributes: [], operations: [] });
       this.currentVersion = event.modelVersion;
       this.eventLog.unshift(`CLASS_CREATED "${event.className}" v${event.modelVersion}`);
+    } else if ('eventType' in event && event.eventType === 'RELATIONSHIP_ADDED') {
+      const e = event as any;
+      const exists = this.relationships.some(r => r.id === e.relationshipId);
+      if (!exists) {
+        this.relationships.push({
+          id: e.relationshipId,
+          type: e.relationshipType,
+          sourceClassId: e.sourceClassId,
+          targetClassId: e.targetClassId,
+          sourceMultiplicity: e.sourceMultiplicity,
+          targetMultiplicity: e.targetMultiplicity
+        });
+        this.eventLog.unshift(`RELATIONSHIP_ADDED v${e.modelVersion}`);
+        this.currentVersion = e.modelVersion;
+      }
     } else {
       this.loadModel();
       return;
@@ -758,7 +778,7 @@ export class AppComponent implements OnInit, OnDestroy {
       updatedClasses[existing] = cls;
       this.classes = updatedClasses;
     }
-    
+
     // Asignar posición default si es nueva
     if (!this.nodePositions[cls.id]) {
        this.nodePositions[cls.id] = { x: 40, y: 40 };
@@ -796,31 +816,88 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  addRelationship(): void {
+    if (!this.newRelSourceId || !this.newRelTargetId || this.newRelSourceId === this.newRelTargetId) return;
+
+    let sourceMult = '';
+    let targetMult = '';
+
+    if (this.newRelType === 'ASSOCIATION' || this.newRelType === 'AGGREGATION' || this.newRelType === 'COMPOSITION') {
+      sourceMult = prompt('Multiplicidad origen (ej: 1, 0..1, *). Deja vacío para omitir:') || '';
+      targetMult = prompt('Multiplicidad destino (ej: 1, 0..1, *). Deja vacío para omitir:') || '';
+    }
+
+    this.errorMessage = '';
+
+    this.umlService.addRelationship(this.projectId, {
+      commandId: uuidv4(),
+      participantId: 'browser-A',
+      expectedVersion: this.currentVersion,
+      type: this.newRelType,
+      sourceClassId: this.newRelSourceId,
+      targetClassId: this.newRelTargetId,
+      sourceMultiplicity: sourceMult,
+      targetMultiplicity: targetMult
+    }).subscribe({
+      next: (response) => {
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) {
+          if (!this.relationships.some(r => r.id === response.relationshipId)) {
+            this.loadModel();
+          }
+          return;
+        }
+
+        if (!this.relationships.some(r => r.id === response.relationshipId)) {
+          this.relationships.push(response.relationship);
+        }
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+        this.newRelSourceId = '';
+        this.newRelTargetId = '';
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.errorMessage = 'Conflicto de versión detectado. Resincronizando estado automáticamente...';
+          this.loadModel();
+        } else {
+          this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+        }
+      }
+    });
+  }
+
+  getClassName(id: string): string {
+    return this.classes.find(c => c.id === id)?.name || id;
+  }
+
   onPointerDown(event: PointerEvent, clsId: string): void {
     if (event.button !== 0) return;
     const target = event.target as HTMLElement;
-    
+
     // Solo iniciar drag desde la cabecera
     if (!target.closest('.class-card-header')) return;
 
     this.draggingClassId = clsId;
     this.dragStartX = event.clientX;
     this.dragStartY = event.clientY;
-    
+
     const pos = this.nodePositions[clsId] || { x: 40, y: 40 };
     this.initialNodeX = pos.x;
     this.initialNodeY = pos.y;
-    
+
     target.setPointerCapture(event.pointerId);
     event.preventDefault();
   }
 
   onPointerMove(event: PointerEvent): void {
     if (!this.draggingClassId) return;
-    
+
     const dx = event.clientX - this.dragStartX;
     const dy = event.clientY - this.dragStartY;
-    
+
     this.nodePositions[this.draggingClassId] = {
       x: this.initialNodeX + dx,
       y: this.initialNodeY + dy
@@ -829,7 +906,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   onPointerUp(event: PointerEvent): void {
     if (!this.draggingClassId) return;
-    
+
     const clsId = this.draggingClassId;
     const finalPos = this.nodePositions[clsId];
     this.draggingClassId = null;

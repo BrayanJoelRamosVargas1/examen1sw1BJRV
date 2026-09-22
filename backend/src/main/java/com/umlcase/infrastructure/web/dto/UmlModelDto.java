@@ -6,5 +6,6 @@ import java.util.UUID;
 public record UmlModelDto(
     UUID projectId,
     long version,
-    List<UmlClassDto> classes
+    List<UmlClassDto> classes,
+    List<UmlRelationshipDto> relationships
 ) {}

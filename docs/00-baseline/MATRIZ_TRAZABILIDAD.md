@@ -1,16 +1,16 @@
 # Matriz de Trazabilidad
-**Versión:** 0.1 | **Fecha:** 2026-09-20 | **Fase UP:** Inicio
+**VersiÃ³n:** 0.1 | **Fecha:** 2026-09-20 | **Fase UP:** Inicio
 
 ---
 
 ## Instrucciones de Uso
 
 Esta matriz garantiza la regla del docente:
-> *"Todo lo que está en la documentación debe estar en el software, y todo lo que está en el software debe estar en la documentación."*
+> *"Todo lo que estÃ¡ en la documentaciÃ³n debe estar en el software, y todo lo que estÃ¡ en el software debe estar en la documentaciÃ³n."*
 
 **Estados de columnas:**
-- `[—]` No aplica en esta fase
-- `[PENDIENTE]` Aún no implementado
+- `[â€”]` No aplica en esta fase
+- `[PENDIENTE]` AÃºn no implementado
 - `[FASE 0]` Implementado en Fase 0
 - `[OK]` Verificado y funcionando
 
@@ -18,35 +18,35 @@ Esta matriz garantiza la regla del docente:
 
 ## Requisitos Funcionales
 
-| ID | Requisito | Clasificación | Componente de Código | Prueba | Sección Docs | Defensa Oral |
+| ID | Requisito | ClasificaciÃ³n | Componente de CÃ³digo | Prueba | SecciÃ³n Docs | Defensa Oral |
 |---|---|---|---|---|---|---|
-| RF-01 | Crear diagramas de clases UML | `[DOCENTE]` | `UmlModel`, `UmlClass` (dominio puro) | `[PENDIENTE - F1]` | BASELINE §2, ADR-003 | `[PENDIENTE]` |
-| RF-02 | Edición manual del diagrama | `[DOCENTE]` | `UmlCommand`, `CommandHandler` | `[PENDIENTE - F1]` | ADR-004 | `[PENDIENTE]` |
-| RF-03 | Edición mediante comandos de voz | `[DOCENTE]` | `VoiceAdapter` (futura) | `[PENDIENTE - F8]` | — | `[PENDIENTE]` |
-| RF-04 | Crear modelo desde fotografía | `[DOCENTE]` | `ImageImporter` (futuro) | `[PENDIENTE - F9]` | — | `[PENDIENTE]` |
-| RF-05 | Trabajo colaborativo | `[DOCENTE]` | `ProjectRoom`, WebSocket | `[PENDIENTE - F3]` | — | `[PENDIENTE]` |
-| RF-06 | Sincronización tiempo real | `[DOCENTE]` | STOMP broadcast | `[PENDIENTE - F3]` | — | `[PENDIENTE]` |
-| RF-07 | Manejo de concurrencia | `[DOCENTE]` | `@Version` (optimista) + serialización futura | `[PENDIENTE - F3]` | ADR-005 | `[PENDIENTE]` |
-| REQ-08 | Importar desde Enterprise Architect | `[DOCENTE]` | `XmiImporter` (futuro) | `[PENDIENTE - F5]` | — | `[PENDIENTE]` |
-| REQ-09 | Exportar hacia Enterprise Architect | `[DOCENTE]` | `XmiExporter` (futuro) | `[PENDIENTE - F5]` | — | `[PENDIENTE]` |
-| REQ-09.1 | XMI como formato | `[PENDIENTE / MECANISMO]` | `XmiService` (futuro) | `[PENDIENTE - F5]` | — | `[PENDIENTE]` |
-| RF-10 | Notación UML 2.5+ | `[DOCENTE]` | Modelo canónico + GoJS | `[PENDIENTE - F2]` | BASELINE §3 | `[PENDIENTE]` |
-| RF-11 | Generar backend Spring Boot | `[DOCENTE]` | `SpringBootGenerator` (futuro) | `[PENDIENTE - F6]` | — | `[PENDIENTE]` |
-| RF-12 | Backend generado con PostgreSQL | `[DOCENTE]` | Plantillas + Docker Compose generado | `[PENDIENTE - F6]` | — | `[PENDIENTE]` |
-| RF-13 | Transformación OO → relacional | `[DOCENTE]` | `OoToRelationalTransformer` (futuro) | `[PENDIENTE - F6]` | — | `[PENDIENTE]` |
-| RF-14 | 4 capas Spring Boot en generado | `[DOCENTE]` | Plantillas Entity/Repo/Svc/Ctrl | `[PENDIENTE - F6]` | — | `[PENDIENTE]` |
-| RF-15 | DTO opcional en generado | `[DOCENTE]` | Plantilla DTO | `[PENDIENTE - F6]` | — | `[PENDIENTE]` |
-| RF-16 | Backend ejecutable (mvn run) | `[DOCENTE]` | CI de prueba del generado | `[PENDIENTE - F7]` | — | `[PENDIENTE]` |
-| RF-17 | Probar backend generado | `[DOCENTE]` | Suite de pruebas automáticas | `[PENDIENTE - F7]` | — | `[PENDIENTE]` |
-| RF-18 | IA integrada en producto | `[DOCENTE]` | Asistente + Imagen→UML | `[PENDIENTE - F10]` | — | `[PENDIENTE]` |
-| RF-19 | Asistente de usuario | `[DOCENTE]` | `AssistantService` (futuro) | `[PENDIENTE - F10]` | — | `[PENDIENTE]` |
-| RF-20 | Frontend móvil para la aplicación generada | `[DOCENTE]` | App móvil | `[PENDIENTE - F11]` | — | `[PENDIENTE]` |
-| RF-20.1 | Desarrollo móvil con Flutter | `[PENDIENTE / CANDIDATO PRINCIPAL]` | App Flutter | `[PENDIENTE - F11]` | — | `[PENDIENTE]` |
-| REQ-22 | Frontend móvil de la CASE | `[DOCENTE]` | App móvil | `[PENDIENTE - F11]` | — | `[PENDIENTE]` |
-| RF-21 | App móvil offline | `[DOCENTE]` | Cola offline + sync | `[PENDIENTE - F11]` | — | `[PENDIENTE]` |
-| RF-22 | IA local en móvil | `[DOCENTE]` | Modelo on-device | `[PENDIENTE - F11]` | — | `[PENDIENTE]` |
-| RF-23 | Sincronización al reconectar | `[DOCENTE]` | Sync service | `[PENDIENTE - F11]` | — | `[PENDIENTE]` |
-| RF-24 | Despliegue AWS | `[DOCENTE]` | IaC / Docker en EC2/ECS | `[PENDIENTE - F12]` | — | `[PENDIENTE]` |
+| RF-01 | Crear diagramas de clases UML | `[DOCENTE]` | `UmlModel`, `UmlClass` (dominio puro) | `[PENDIENTE - F1]` | BASELINE Â§2, ADR-003 | `[PENDIENTE]` |
+| RF-02 | EdiciÃ³n manual del diagrama | `[DOCENTE]` | `UmlCommand`, `CommandHandler` | `[PENDIENTE - F1]` | ADR-004 | `[PENDIENTE]` |
+| RF-03 | EdiciÃ³n mediante comandos de voz | `[DOCENTE]` | `VoiceAdapter` (futura) | `[PENDIENTE - F8]` | â€” | `[PENDIENTE]` |
+| RF-04 | Crear modelo desde fotografÃ­a | `[DOCENTE]` | `ImageImporter` (futuro) | `[PENDIENTE - F9]` | â€” | `[PENDIENTE]` |
+| RF-05 | Trabajo colaborativo | `[DOCENTE]` | `ProjectRoom`, WebSocket | `[PENDIENTE - F3]` | â€” | `[PENDIENTE]` |
+| RF-06 | SincronizaciÃ³n tiempo real | `[DOCENTE]` | STOMP broadcast | `[PENDIENTE - F3]` | â€” | `[PENDIENTE]` |
+| RF-07 | Manejo de concurrencia | `[DOCENTE]` | `@Version` (optimista) + serializaciÃ³n futura | `[PENDIENTE - F3]` | ADR-005 | `[PENDIENTE]` |
+| REQ-08 | Importar desde Enterprise Architect | `[DOCENTE]` | `XmiImporter` (futuro) | `[PENDIENTE - F5]` | â€” | `[PENDIENTE]` |
+| REQ-09 | Exportar hacia Enterprise Architect | `[DOCENTE]` | `XmiExporter` (futuro) | `[PENDIENTE - F5]` | â€” | `[PENDIENTE]` |
+| REQ-09.1 | XMI como formato | `[PENDIENTE / MECANISMO]` | `XmiService` (futuro) | `[PENDIENTE - F5]` | â€” | `[PENDIENTE]` |
+| RF-10 | NotaciÃ³n UML 2.5+ | `[DOCENTE]` | Modelo canÃ³nico + GoJS | `[PENDIENTE - F2]` | BASELINE Â§3 | `[PENDIENTE]` |
+| RF-11 | Generar backend Spring Boot | `[DOCENTE]` | `SpringBootGenerator` (futuro) | `[PENDIENTE - F6]` | â€” | `[PENDIENTE]` |
+| RF-12 | Backend generado con PostgreSQL | `[DOCENTE]` | Plantillas + Docker Compose generado | `[PENDIENTE - F6]` | â€” | `[PENDIENTE]` |
+| RF-13 | TransformaciÃ³n OO â†’ relacional | `[DOCENTE]` | `OoToRelationalTransformer` (futuro) | `[PENDIENTE - F6]` | â€” | `[PENDIENTE]` |
+| RF-14 | 4 capas Spring Boot en generado | `[DOCENTE]` | Plantillas Entity/Repo/Svc/Ctrl | `[PENDIENTE - F6]` | â€” | `[PENDIENTE]` |
+| RF-15 | DTO opcional en generado | `[DOCENTE]` | Plantilla DTO | `[PENDIENTE - F6]` | â€” | `[PENDIENTE]` |
+| RF-16 | Backend ejecutable (mvn run) | `[DOCENTE]` | CI de prueba del generado | `[PENDIENTE - F7]` | â€” | `[PENDIENTE]` |
+| RF-17 | Probar backend generado | `[DOCENTE]` | Suite de pruebas automÃ¡ticas | `[PENDIENTE - F7]` | â€” | `[PENDIENTE]` |
+| RF-18 | IA integrada en producto | `[DOCENTE]` | Asistente + Imagenâ†’UML | `[PENDIENTE - F10]` | â€” | `[PENDIENTE]` |
+| RF-19 | Asistente de usuario | `[DOCENTE]` | `AssistantService` (futuro) | `[PENDIENTE - F10]` | â€” | `[PENDIENTE]` |
+| RF-20 | Frontend mÃ³vil para la aplicaciÃ³n generada | `[DOCENTE]` | App mÃ³vil | `[PENDIENTE - F11]` | â€” | `[PENDIENTE]` |
+| RF-20.1 | Desarrollo mÃ³vil con Flutter | `[PENDIENTE / CANDIDATO PRINCIPAL]` | App Flutter | `[PENDIENTE - F11]` | â€” | `[PENDIENTE]` |
+| REQ-22 | Frontend mÃ³vil de la CASE | `[DOCENTE]` | App mÃ³vil | `[PENDIENTE - F11]` | â€” | `[PENDIENTE]` |
+| RF-21 | App mÃ³vil offline | `[DOCENTE]` | Cola offline + sync | `[PENDIENTE - F11]` | â€” | `[PENDIENTE]` |
+| RF-22 | IA local en mÃ³vil | `[DOCENTE]` | Modelo on-device | `[PENDIENTE - F11]` | â€” | `[PENDIENTE]` |
+| RF-23 | SincronizaciÃ³n al reconectar | `[DOCENTE]` | Sync service | `[PENDIENTE - F11]` | â€” | `[PENDIENTE]` |
+| RF-24 | Despliegue AWS | `[DOCENTE]` | IaC / Docker en EC2/ECS | `[PENDIENTE - F12]` | â€” | `[PENDIENTE]` |
 
 ---
 
@@ -55,17 +55,17 @@ Esta matriz garantiza la regla del docente:
 | ID | Componente | Estado | Prueba | Evidencia |
 |---|---|---|---|---|
 | INF-01 | Repositorio Git independiente | `[FASE 0]` | `git status` | `[OK]` |
-| INF-02 | Estructura documental UP | `[FASE 0]` | Revisión manual | `[OK]` |
-| INF-03 | `REQUISITOS_DOCENTE.md` | `[FASE 0]` | Revisión manual | Este documento / `docs/00-baseline` |
-| INF-04 | `GLOSARIO.md` | `[FASE 0]` | Revisión manual | `docs/00-baseline/GLOSARIO.md` |
-| INF-05 | ADR creados | `[FASE 0]` | Revisión manual | `docs/02-elaboracion/adr/` |
+| INF-02 | Estructura documental UP | `[FASE 0]` | RevisiÃ³n manual | `[OK]` |
+| INF-03 | `REQUISITOS_DOCENTE.md` | `[FASE 0]` | RevisiÃ³n manual | Este documento / `docs/00-baseline` |
+| INF-04 | `GLOSARIO.md` | `[FASE 0]` | RevisiÃ³n manual | `docs/00-baseline/GLOSARIO.md` |
+| INF-05 | ADR creados | `[FASE 0]` | RevisiÃ³n manual | `docs/02-elaboracion/adr/` |
 | INF-06 | Modelo dominio UML puro (Java) | `[FASE 0]` | Unit test dominio | `[OK]` |
-| INF-07 | Modelo visual separado | `[FASE 0]` | Revisión manual | `[OK]` |
-| INF-08 | Contrato `UmlCommand` | `[FASE 0]` | Revisión manual | `[OK]` |
-| INF-09 | Puerto `UmlModelRepository` | `[FASE 0]` | Revisión manual | `[OK]` |
-| INF-10 | PostgreSQL vía Docker Compose | `[FASE 0]` | `docker compose ps` | `[OK]` |
-| INF-11 | Spring Boot mínimo + `/api/health` | `[FASE 0]` | `curl` / test HTTP | `[OK]` |
-| INF-12 | Angular mínimo compilando | `[FASE 0]` | `npm run build` | `[OK]` |
+| INF-07 | Modelo visual separado | `[FASE 0]` | RevisiÃ³n manual | `[OK]` |
+| INF-08 | Contrato `UmlCommand` | `[FASE 0]` | RevisiÃ³n manual | `[OK]` |
+| INF-09 | Puerto `UmlModelRepository` | `[FASE 0]` | RevisiÃ³n manual | `[OK]` |
+| INF-10 | PostgreSQL vÃ­a Docker Compose | `[FASE 0]` | `docker compose ps` | `[OK]` |
+| INF-11 | Spring Boot mÃ­nimo + `/api/health` | `[FASE 0]` | `curl` / test HTTP | `[OK]` |
+| INF-12 | Angular mÃ­nimo compilando | `[FASE 0]` | `npm run build` | `[OK]` |
 
 ---
 
@@ -77,7 +77,7 @@ Esta matriz garantiza la regla del docente:
 | F1-02 | POST `/api/projects/{projectId}/classes` | `[FASE 1]` | `CreateClassApiIT` | `[OK]` |
 | F1-03 | Persistencia PostgreSQL + Flyway | `[FASE 1]` | `JpaUmlModelRepositoryAdapterIT` | `[OK]` |
 | F1-04 | Concurrencia optimista (`@Version`) | `[FASE 1]` | `CreateClassTransactionalIT` | `[OK]` |
-| F1-05 | Publicación interna `AFTER_COMMIT` | `[FASE 1]` | `CreateClassTransactionalIT` | `[OK]` |
+| F1-05 | PublicaciÃ³n interna `AFTER_COMMIT` | `[FASE 1]` | `CreateClassTransactionalIT` | `[OK]` |
 | F1-06 | Broadcast STOMP a clientes | `[FASE 1]` | Demo manual A/B | `[OK]` |
 | F1-07 | Frontend Angular reactivo | `[FASE 1]` | Demo manual A/B | `[OK]` |
 | F1-08 | Persistencia comprobable tras F5 | `[FASE 1]` | Demo manual F5 | `[OK]` |
@@ -90,7 +90,7 @@ Esta matriz garantiza la regla del docente:
 |---|---|---|---|---|
 | F2.1-01 | PATCH `/api/projects/{projectId}/classes/{classId}/rename` | `[FASE 2.1]` | `RenameClassApiIT` | `[OK]` |
 | F2.1-02 | STOMP broadcast CLASS_RENAMED | `[FASE 2.1]` | Demo A/B | `[OK]` |
-| F2.1-03 | Frontend / Angular actualización | `[FASE 2.1]` | Demo A/B | `[OK]` |
+| F2.1-03 | Frontend / Angular actualizaciÃ³n | `[FASE 2.1]` | Demo A/B | `[OK]` |
 | F2.1-04 | 409 Conflict desacoplado | `[FASE 2.1]` | `RenameClassHandlerTest` | `[OK]` |
 
 ---
@@ -112,8 +112,8 @@ Esta matriz garantiza la regla del docente:
 |---|---|---|---|---|
 | F2.2.2-01 | PUT `/api/projects/{projectId}/classes/{classId}/attributes/{attributeId}` | `[FASE 2.2.2]` | `UpdateAttributeApiIT` | `[OK]` |
 | F2.2.2-02 | STOMP broadcast ATTRIBUTE_UPDATED | `[FASE 2.2.2]` | Demo A/B | `[OK]` |
-| F2.2.2-03 | Deduplicación STOMP para el autor del HTTP 200 | `[FASE 2.2.2]` | Demo A/B | `[OK]` |
-| F2.2.2-04 | Separación lógica Frontend Add vs Update | `[FASE 2.2.2]` | Demo A/B | `[OK]` |
+| F2.2.2-03 | DeduplicaciÃ³n STOMP para el autor del HTTP 200 | `[FASE 2.2.2]` | Demo A/B | `[OK]` |
+| F2.2.2-04 | SeparaciÃ³n lÃ³gica Frontend Add vs Update | `[FASE 2.2.2]` | Demo A/B | `[OK]` |
 | F2.2.2-05 | 409 Conflict Optimistic Locking | `[FASE 2.2.2]` | `UpdateAttributeApiIT` | `[OK]` |
 
 ---
@@ -124,7 +124,7 @@ Esta matriz garantiza la regla del docente:
 |---|---|---|---|---|
 | F2.2.3-01 | DELETE `/api/projects/{projectId}/classes/{classId}/attributes/{attributeId}` | `[FASE 2.2.3]` | `RemoveAttributeApiIT` | `[OK]` |
 | F2.2.3-02 | STOMP broadcast ATTRIBUTE_REMOVED | `[FASE 2.2.3]` | Demo A/B | `[OK]` |
-| F2.2.3-03 | Estabilización Race Condition STOMP/HTTP/GET | `[FASE 2.2.3]` | Demo A/B y F5 | `[OK]` |
+| F2.2.3-03 | EstabilizaciÃ³n Race Condition STOMP/HTTP/GET | `[FASE 2.2.3]` | Demo A/B y F5 | `[OK]` |
 
 ---
 
@@ -135,9 +135,9 @@ Esta matriz garantiza la regla del docente:
 | F2.3.1-01 | POST `/api/projects/{projectId}/classes/{classId}/operations` | `[FASE 2.3.1]` | `AddOperationApiIT` | `[OK]` |
 | F2.3.1-02 | Persistencia V4 (uml_operations, uml_parameters) y orden | `[FASE 2.3.1]` | `AddOperationTransactionalIT` | `[OK]` |
 | F2.3.1-03 | Refactor JPA a `Set<LinkedHashSet>` anti MultipleBagFetchException | `[FASE 2.3.1]` | Suite 75 tests completa | `[OK]` |
-| F2.3.1-04 | STOMP broadcast OPERATION_ADDED con parámetros | `[FASE 2.3.1]` | Demo A/B | `[OK]` |
-| F2.3.1-05 | Política de Sobrecarga (Overloading) de Firmas UML | `[FASE 2.3.1]` | `UmlClassTest` | `[OK]` |
-| F2.3.1-06 | Frontend notación UML (`+ nombre(p: Tipo): Ret`) | `[FASE 2.3.1]` | Demo A/B y F5 | `[OK]` |
+| F2.3.1-04 | STOMP broadcast OPERATION_ADDED con parÃ¡metros | `[FASE 2.3.1]` | Demo A/B | `[OK]` |
+| F2.3.1-05 | PolÃ­tica de Sobrecarga (Overloading) de Firmas UML | `[FASE 2.3.1]` | `UmlClassTest` | `[OK]` |
+| F2.3.1-06 | Frontend notaciÃ³n UML (`+ nombre(p: Tipo): Ret`) | `[FASE 2.3.1]` | Demo A/B y F5 | `[OK]` |
 ---
 
 ## Componentes de Fase 2.3.2 (Update Operation + Parameters)
@@ -147,8 +147,8 @@ Esta matriz garantiza la regla del docente:
 | F2.3.2-01 | PUT /api/projects/{projectId}/classes/{classId}/operations/{operationId} | [FASE 2.3.2] | UpdateOperationApiIT | [OK] |
 | F2.3.2-02 | Bidireccionalidad Operation->Parameter para dirty-checking estable | [FASE 2.3.2] | UpdateOperationTransactionalIT | [OK] |
 | F2.3.2-03 | STOMP broadcast OPERATION_UPDATED + Fix STOMP test | [FASE 2.3.2] | UpdateOperationStompIT | [OK] |
-| F2.3.2-04 | Fix markModified monot�nico forzado para @Version | [FASE 2.3.2] | UpdateOperationTransactionalIT | [OK] |
-| F2.3.2-05 | Fix Cach� GET /model en navegadores
+| F2.3.2-04 | Fix markModified monotónico forzado para @Version | [FASE 2.3.2] | UpdateOperationTransactionalIT | [OK] |
+| F2.3.2-05 | Fix Caché GET /model en navegadores
 o-cache | [FASE 2.3.2] | Demo F5 A/B | [OK] |
 ---
 
@@ -189,11 +189,31 @@ o-cache | [FASE 2.3.2] | Demo F5 A/B | [OK] |
 
 | ID | Componente | Estado | Prueba | Evidencia |
 |---|---|---|---|---|
-| F2.6-01 | Auditor�a de integridad arquitect�nica (Model vs Layout) | [FASE 2.6] | Demo A/B Integral | [OK] |
+| F2.6-01 | Auditoría de integridad arquitectónica (Model vs Layout) | [FASE 2.6] | Demo A/B Integral | [OK] |
 | F2.6-02 | Suite completada sin regresiones (100 tests) | [FASE 2.6] | mvnw test | [OK] |
-| F2.6-03 | Auditor�a de CSS y Build est�tico | [FASE 2.6] | 
+| F2.6-03 | Auditoría de CSS y Build estático | [FASE 2.6] | 
 pm run build | [OK] |
 
 ---
 
 **FASE 2 COMPLETADA SATISFACTORIAMENTE.**
+
+---
+
+## Componentes de Fase 3.0 (Arquitectura Relationships)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F3.0-01 | UmlRelationship de dominio (pureza, tipos) | `[FASE 3.0]` | ADR/Docs | `[OK]` |
+
+---
+
+## Componentes de Fase 3.1 (Add Relationship)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F3.1-01 | POST `/api/projects/{projectId}/relationships` | `[FASE 3.1]` | `AddRelationshipApiIT` | `[OK]` |
+| F3.1-02 | Persistencia V6 (uml_relationships) + Optimistic Locking | `[FASE 3.1]` | `AddRelationshipTransactionalIT` | `[OK]` |
+| F3.1-03 | STOMP broadcast RELATIONSHIP_ADDED | `[FASE 3.1]` | Node script / Demo | `[OK]` |
+| F3.1-04 | GET /model serializa relationships | `[FASE 3.1]` | `AddRelationshipApiIT` | `[OK]` |
+| F3.1-05 | Fix bug STOMP propagation | `[FASE 3.1]` | `StompUmlEventListenerTest` | `[OK]` |

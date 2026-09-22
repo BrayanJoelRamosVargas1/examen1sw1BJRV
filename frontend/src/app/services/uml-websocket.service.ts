@@ -113,6 +113,19 @@ export interface NodeMovedEvent {
   layoutVersion: number;
 }
 
+export interface RelationshipAddedEvent {
+  eventType: 'RELATIONSHIP_ADDED';
+  commandId: string;
+  projectId: string;
+  relationshipId: string;
+  sourceClassId: string;
+  targetClassId: string;
+  relationshipType: string;
+  sourceMultiplicity: string;
+  targetMultiplicity: string;
+  modelVersion: number;
+}
+
 export type UmlEvent =
   | ClassCreatedEvent
   | ClassRenamedEvent
@@ -121,7 +134,8 @@ export type UmlEvent =
   | AttributeRemovedEvent
   | OperationAddedEvent
   | OperationUpdatedEvent
-  | OperationRemovedEvent;
+  | OperationRemovedEvent
+  | RelationshipAddedEvent;
 
 export type DiagramEvent = NodeMovedEvent;
 

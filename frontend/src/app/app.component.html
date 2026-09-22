@@ -36,8 +36,45 @@
       (click)="createClass()"
       [disabled]="!newClassName.trim() || wsStatus !== 'connected'"
     >
-      Crear
+      Crear Clase
     </button>
+  </section>
+
+  <!-- Crear relación -->
+  <section class="create-section" *ngIf="classes.length > 1">
+    <select [(ngModel)]="newRelSourceId" [disabled]="wsStatus !== 'connected'">
+      <option value="" disabled>Origen...</option>
+      <option *ngFor="let c of classes" [value]="c.id">{{c.name}}</option>
+    </select>
+    <select [(ngModel)]="newRelTargetId" [disabled]="wsStatus !== 'connected'">
+      <option value="" disabled>Destino...</option>
+      <option *ngFor="let c of classes" [value]="c.id">{{c.name}}</option>
+    </select>
+    <select [(ngModel)]="newRelType" [disabled]="wsStatus !== 'connected'">
+      <option value="ASSOCIATION">ASSOCIATION</option>
+      <option value="GENERALIZATION">GENERALIZATION</option>
+      <option value="AGGREGATION">AGGREGATION</option>
+      <option value="COMPOSITION">COMPOSITION</option>
+    </select>
+    <button
+      (click)="addRelationship()"
+      [disabled]="!newRelSourceId || !newRelTargetId || newRelSourceId === newRelTargetId || wsStatus !== 'connected'"
+    >
+      + Relación
+    </button>
+  </section>
+
+  <section class="relationships-list-panel" *ngIf="relationships.length > 0">
+    <h2>Relaciones ({{ relationships.length }})</h2>
+    <ul>
+      <li *ngFor="let rel of relationships">
+        <strong>{{getClassName(rel.sourceClassId)}}</strong>
+        <span *ngIf="rel.sourceMultiplicity"> ({{rel.sourceMultiplicity}})</span>
+        --[{{rel.type}}]-->
+        <strong>{{getClassName(rel.targetClassId)}}</strong>
+        <span *ngIf="rel.targetMultiplicity"> ({{rel.targetMultiplicity}})</span>
+      </li>
+    </ul>
   </section>
 
   <div class="panels">
