@@ -2,6 +2,7 @@ package com.umlcase.application.handler.diagram;
 
 import com.umlcase.application.command.diagram.SaveNodeViewCommand;
 import com.umlcase.application.exception.ProjectNotFoundException;
+import com.umlcase.application.port.out.diagram.DiagramEventPublisher;
 import com.umlcase.application.port.out.diagram.UmlDiagramLayoutRepository;
 import com.umlcase.domain.model.UmlClass;
 import com.umlcase.domain.model.UmlModel;
@@ -31,12 +32,15 @@ class SaveNodeViewHandlerTest {
     @Mock
     private UmlModelRepository modelRepository;
 
+    @Mock
+    private DiagramEventPublisher diagramEventPublisher;
+
     private SaveNodeViewHandler handler;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        handler = new SaveNodeViewHandler(diagramRepository, modelRepository);
+        handler = new SaveNodeViewHandler(diagramRepository, modelRepository, diagramEventPublisher);
     }
 
     @Test
@@ -78,6 +82,17 @@ class SaveNodeViewHandlerTest {
         assertEquals(classId, saved.getNodeViews().get(0).getClassId());
         assertEquals(100.5, saved.getNodeViews().get(0).getX());
         assertEquals(200.5, saved.getNodeViews().get(0).getY());
+
+        ArgumentCaptor<com.umlcase.application.event.NodeMovedEvent> eventCaptor = ArgumentCaptor.forClass(com.umlcase.application.event.NodeMovedEvent.class);
+        verify(diagramEventPublisher, times(1)).publish(eventCaptor.capture());
+
+        com.umlcase.application.event.NodeMovedEvent publishedEvent = eventCaptor.getValue();
+        assertEquals("NODE_MOVED", publishedEvent.getEventType());
+        assertEquals(projectId, publishedEvent.getProjectId());
+        assertEquals(classId, publishedEvent.getClassId());
+        assertEquals(100.5, publishedEvent.getX());
+        assertEquals(200.5, publishedEvent.getY());
+        assertEquals(1L, publishedEvent.getLayoutVersion());
     }
 
     @Test

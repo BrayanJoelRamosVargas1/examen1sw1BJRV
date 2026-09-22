@@ -133,6 +133,22 @@ h2 {
   padding: 1rem;
 }
 
+.diagram-panel {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.diagram-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 800px;
+  background: #101525;
+  border: 1px dashed #3a3a6e;
+  border-radius: 4px;
+  overflow: auto;
+}
+
 .class-list, .event-log {
   list-style: none;
 }
@@ -146,6 +162,19 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  
+  /* Layout absoluto para Drag & Drop */
+  position: absolute;
+  width: 320px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  transition: box-shadow 0.2s, z-index 0s;
+  z-index: 10;
+}
+
+.class-card.dragging {
+  z-index: 999;
+  box-shadow: 0 8px 15px rgba(0,0,0,0.5);
+  opacity: 0.9;
 }
 
 .class-card:last-child { margin-bottom: 0; }

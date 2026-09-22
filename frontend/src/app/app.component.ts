@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { UmlService, UmlClassDto } from './services/uml.service';
-import { UmlWebSocketService, ClassCreatedEvent, ClassRenamedEvent, UmlEvent, WsStatus, AttributeUpdatedEvent, OperationAddedEvent, OperationRemovedEvent } from './services/uml-websocket.service';
+import { UmlWebSocketService, ClassCreatedEvent, ClassRenamedEvent, UmlEvent, WsStatus, AttributeUpdatedEvent, OperationAddedEvent, OperationRemovedEvent, DiagramEvent } from './services/uml-websocket.service';
 import { v4 as uuidv4 } from 'uuid';
 
 // UUID del proyecto temporal de desarrollo (Fase 1)
@@ -32,6 +32,21 @@ export class AppComponent implements OnInit, OnDestroy {
   private snapshotRequestId = 0;
   private wsSub?: Subscription;
 
+  // Estado del layout y variables para el drag
+  currentLayoutVersion = 0;
+  private layoutEventBuffer: DiagramEvent[] = [];
+  private layoutSnapshotLoaded = false;
+  private layoutSnapshotRequestId = 0;
+  private layoutWsSub?: Subscription;
+
+  nodePositions: Record<string, { x: number; y: number } | undefined> = {};
+  
+  draggingClassId: string | null = null;
+  dragStartX = 0;
+  dragStartY = 0;
+  initialNodeX = 0;
+  initialNodeY = 0;
+
   constructor(
     private umlService: UmlService,
     private wsService: UmlWebSocketService
@@ -56,11 +71,20 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     });
 
+    this.layoutWsSub = this.wsService.layoutEvents$.subscribe(event => {
+      if (!this.layoutSnapshotLoaded) {
+        this.layoutEventBuffer.push(event);
+      } else {
+        this.applyLayoutEvent(event);
+      }
+    });
+
     // Paso 1: conectar y suscribirse al topic
     await this.wsService.connect(this.projectId);
 
-    // Paso 2: obtener snapshot inicial
+    // Paso 2: obtener snapshots iniciales
     this.loadModel();
+    this.loadLayout();
   }
 
   private loadModel(): void {
@@ -85,6 +109,8 @@ export class AppComponent implements OnInit, OnDestroy {
             this.eventBuffer.push(bufferedEvent);
           }
         }
+        
+        this.applyFallbackPositions();
       },
       error: (err) => {
         if (requestId !== this.snapshotRequestId) return;
@@ -93,6 +119,55 @@ export class AppComponent implements OnInit, OnDestroy {
         this.eventBuffer = [];
       }
     });
+  }
+
+  private loadLayout(): void {
+    const requestId = ++this.layoutSnapshotRequestId;
+    this.layoutSnapshotLoaded = false;
+    this.umlService.getDiagram(this.projectId).subscribe({
+      next: (layout) => {
+        if (requestId !== this.layoutSnapshotRequestId) return;
+        this.currentLayoutVersion = layout.layoutVersion;
+        
+        // Asignar posiciones persistidas
+        layout.nodeViews.forEach((nv: any) => {
+          this.nodePositions[nv.classId] = { x: nv.x, y: nv.y };
+        });
+        
+        this.layoutSnapshotLoaded = true;
+        this.applyFallbackPositions();
+
+        const bufferedEvents = this.layoutEventBuffer;
+        this.layoutEventBuffer = [];
+        for (const bufferedEvent of bufferedEvents) {
+          if (this.layoutSnapshotLoaded) {
+            this.applyLayoutEvent(bufferedEvent);
+          } else {
+            this.layoutEventBuffer.push(bufferedEvent);
+          }
+        }
+      },
+      error: (err) => {
+        if (requestId !== this.layoutSnapshotRequestId) return;
+        this.errorMessage = 'Error cargando layout: ' + err.message;
+        this.layoutSnapshotLoaded = true;
+        this.layoutEventBuffer = [];
+      }
+    });
+  }
+
+  private applyFallbackPositions(): void {
+    if (!this.snapshotLoaded || !this.layoutSnapshotLoaded) return;
+    
+    let index = 0;
+    for (const cls of this.classes) {
+      if (!this.nodePositions[cls.id]) {
+        const col = index % 3;
+        const row = Math.floor(index / 3);
+        this.nodePositions[cls.id] = { x: 40 + col * 360, y: 40 + row * 360 };
+      }
+      index++;
+    }
   }
 
   createClass(): void {
@@ -282,6 +357,22 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.eventLog.length > 20) {
       this.eventLog.pop();
     }
+  }
+
+  private applyLayoutEvent(event: DiagramEvent): void {
+    if (event.layoutVersion <= this.currentLayoutVersion) {
+      return;
+    }
+
+    if (event.layoutVersion > this.currentLayoutVersion + 1) {
+      this.loadLayout();
+      return;
+    }
+
+    this.nodePositions[event.classId] = { x: event.x, y: event.y };
+    this.currentLayoutVersion = event.layoutVersion;
+    this.eventLog.unshift(`NODE_MOVED v${event.layoutVersion}`);
+    if (this.eventLog.length > 20) this.eventLog.pop();
   }
 
   renameClass(cls: UmlClassDto): void {
@@ -667,10 +758,17 @@ export class AppComponent implements OnInit, OnDestroy {
       updatedClasses[existing] = cls;
       this.classes = updatedClasses;
     }
+    
+    // Asignar posición default si es nueva
+    if (!this.nodePositions[cls.id]) {
+       this.nodePositions[cls.id] = { x: 40, y: 40 };
+       this.applyFallbackPositions(); // reacomodar las default si se quiere
+    }
   }
 
   ngOnDestroy(): void {
     this.wsSub?.unsubscribe();
+    this.layoutWsSub?.unsubscribe();
     this.wsService.disconnect();
   }
 
@@ -696,5 +794,72 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  onPointerDown(event: PointerEvent, clsId: string): void {
+    if (event.button !== 0) return;
+    const target = event.target as HTMLElement;
+    
+    // Solo iniciar drag desde la cabecera
+    if (!target.closest('.class-card-header')) return;
+
+    this.draggingClassId = clsId;
+    this.dragStartX = event.clientX;
+    this.dragStartY = event.clientY;
+    
+    const pos = this.nodePositions[clsId] || { x: 40, y: 40 };
+    this.initialNodeX = pos.x;
+    this.initialNodeY = pos.y;
+    
+    target.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  onPointerMove(event: PointerEvent): void {
+    if (!this.draggingClassId) return;
+    
+    const dx = event.clientX - this.dragStartX;
+    const dy = event.clientY - this.dragStartY;
+    
+    this.nodePositions[this.draggingClassId] = {
+      x: this.initialNodeX + dx,
+      y: this.initialNodeY + dy
+    };
+  }
+
+  onPointerUp(event: PointerEvent): void {
+    if (!this.draggingClassId) return;
+    
+    const clsId = this.draggingClassId;
+    const finalPos = this.nodePositions[clsId];
+    this.draggingClassId = null;
+
+    const target = event.target as HTMLElement;
+    target.releasePointerCapture(event.pointerId);
+
+    if (!finalPos) return;
+
+    this.umlService.saveNodeView(
+      this.projectId,
+      clsId,
+      uuidv4(),
+      'browser-A',
+      this.currentLayoutVersion,
+      finalPos.x,
+      finalPos.y
+    ).subscribe({
+      next: (response) => {
+        this.currentLayoutVersion = Math.max(this.currentLayoutVersion, response.layoutVersion);
+        this.nodePositions[clsId] = { x: response.x, y: response.y };
+      },
+      error: (err) => {
+        if (err.status === 409) {
+           this.errorMessage = 'Conflicto de layout detectado. Resincronizando posiciones...';
+           this.loadLayout();
+        } else {
+           this.errorMessage = 'Error moviendo nodo: ' + (err.error?.error || err.message);
+        }
+      }
+    });
   }
 }

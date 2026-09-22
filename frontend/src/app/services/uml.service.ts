@@ -145,6 +145,26 @@ export interface UpdateOperationResponse {
   modelVersion: number;
 }
 
+export interface SaveNodeViewResponse {
+  commandId: string;
+  classId: string;
+  x: number;
+  y: number;
+  layoutVersion: number;
+}
+
+export interface NodeViewDto {
+  classId: string;
+  x: number;
+  y: number;
+}
+
+export interface GetDiagramLayoutResponse {
+  projectId: string;
+  layoutVersion: number;
+  nodeViews: NodeViewDto[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class UmlService {
   constructor(private http: HttpClient) {}
@@ -247,14 +267,8 @@ export class UmlService {
 
   // DIAGRAM LAYOUT
 
-  getDiagram(projectId: string): Observable<any> {
-    return this.http.get<any>(`${API}/projects/${projectId}/diagram`, {
-      headers: {
-        'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
-        Pragma: 'no-cache',
-        Expires: '0'
-      }
-    });
+  getDiagram(projectId: string): Observable<GetDiagramLayoutResponse> {
+    return this.http.get<GetDiagramLayoutResponse>(`${API}/projects/${projectId}/diagram`);
   }
 
   saveNodeView(
@@ -265,8 +279,8 @@ export class UmlService {
     expectedLayoutVersion: number,
     x: number,
     y: number
-  ): Observable<any> {
-    return this.http.put<any>(`${API}/projects/${projectId}/diagram/nodes/${classId}`, {
+  ): Observable<SaveNodeViewResponse> {
+    return this.http.put<SaveNodeViewResponse>(`${API}/projects/${projectId}/diagram/nodes/${classId}`, {
       commandId,
       participantId,
       expectedLayoutVersion,

@@ -1,13 +1,16 @@
 package com.umlcase.application.handler.diagram;
 
 import com.umlcase.application.command.diagram.SaveNodeViewCommand;
+import com.umlcase.application.event.NodeMovedEvent;
 import com.umlcase.application.exception.ProjectNotFoundException;
 import com.umlcase.application.port.in.diagram.SaveNodeViewUseCase;
-import com.umlcase.domain.port.UmlModelRepository;
+import com.umlcase.application.port.out.diagram.DiagramEventPublisher;
 import com.umlcase.application.port.out.diagram.UmlDiagramLayoutRepository;
 import com.umlcase.domain.model.UmlModel;
 import com.umlcase.domain.model.diagram.UmlDiagramLayout;
+import com.umlcase.domain.port.UmlModelRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 
@@ -15,13 +18,16 @@ import java.util.ArrayList;
 public class SaveNodeViewHandler implements SaveNodeViewUseCase {
     private final UmlDiagramLayoutRepository diagramRepository;
     private final UmlModelRepository modelRepository;
+    private final DiagramEventPublisher diagramEventPublisher;
 
-    public SaveNodeViewHandler(UmlDiagramLayoutRepository diagramRepository, UmlModelRepository modelRepository) {
+    public SaveNodeViewHandler(UmlDiagramLayoutRepository diagramRepository, UmlModelRepository modelRepository, DiagramEventPublisher diagramEventPublisher) {
         this.diagramRepository = diagramRepository;
         this.modelRepository = modelRepository;
+        this.diagramEventPublisher = diagramEventPublisher;
     }
 
     @Override
+    @Transactional
     public long execute(SaveNodeViewCommand command) {
         if (!Double.isFinite(command.getX()) || !Double.isFinite(command.getY())) {
             throw new IllegalArgumentException("Coordinates must be finite numbers");
@@ -46,6 +52,17 @@ public class SaveNodeViewHandler implements SaveNodeViewUseCase {
         layout.upsertNodeView(command.getClassId(), command.getX(), command.getY());
 
         // Increment version to return the new layoutVersion (save operation handles the persist and optimistic locking)
-        return diagramRepository.save(layout, command.getExpectedLayoutVersion());
+        long newLayoutVersion = diagramRepository.save(layout, command.getExpectedLayoutVersion());
+
+        diagramEventPublisher.publish(new NodeMovedEvent(
+                command.getCommandId(),
+                command.getProjectId(),
+                command.getClassId(),
+                command.getX(),
+                command.getY(),
+                newLayoutVersion
+        ));
+
+        return newLayoutVersion;
     }
 }

@@ -41,14 +41,21 @@
   </section>
 
   <div class="panels">
-    <!-- Panel de clases -->
-    <section class="panel">
-      <h2>Clases del modelo ({{ classes.length }})</h2>
-      <ul class="class-list" *ngIf="classes.length > 0; else emptyClasses">
-        <li *ngFor="let cls of classes" class="class-card">
+    <!-- Panel de clases / Diagrama -->
+    <section class="panel diagram-panel">
+      <h2>Diagrama UML (Layout v{{ currentLayoutVersion }})</h2>
+      <div class="diagram-canvas" *ngIf="classes.length > 0; else emptyClasses">
+        <div *ngFor="let cls of classes" class="class-card"
+             [style.left.px]="nodePositions[cls.id]?.x || 0"
+             [style.top.px]="nodePositions[cls.id]?.y || 0"
+             [class.dragging]="draggingClassId === cls.id">
 
-          <!-- Cabecera de clase -->
-          <div class="class-card-header">
+          <!-- Cabecera de clase (Grab handle) -->
+          <div class="class-card-header"
+               (pointerdown)="onPointerDown($event, cls.id)"
+               (pointermove)="onPointerMove($event)"
+               (pointerup)="onPointerUp($event)"
+               style="cursor: grab; touch-action: none;">
             <span class="class-name">{{ cls.name }}</span>
             <code class="class-id">{{ cls.id }}</code>
           </div>
@@ -91,8 +98,8 @@
             <ng-template #noOps><p class="empty-section">Sin operaciones</p></ng-template>
           </div>
 
-        </li>
-      </ul>
+        </div>
+      </div>
       <ng-template #emptyClasses>
         <p class="empty">Sin clases todavía. Crea la primera arriba.</p>
       </ng-template>

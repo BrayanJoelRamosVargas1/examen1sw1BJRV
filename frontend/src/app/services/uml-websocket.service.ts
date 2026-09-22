@@ -103,7 +103,27 @@ export interface OperationRemovedEvent {
   modelVersion: number;
 }
 
-export type UmlEvent = ClassCreatedEvent | ClassRenamedEvent | AttributeAddedEvent | AttributeUpdatedEvent | AttributeRemovedEvent | OperationAddedEvent | OperationUpdatedEvent | OperationRemovedEvent;
+export interface NodeMovedEvent {
+  eventType: 'NODE_MOVED';
+  commandId: string;
+  projectId: string;
+  classId: string;
+  x: number;
+  y: number;
+  layoutVersion: number;
+}
+
+export type UmlEvent =
+  | ClassCreatedEvent
+  | ClassRenamedEvent
+  | AttributeAddedEvent
+  | AttributeUpdatedEvent
+  | AttributeRemovedEvent
+  | OperationAddedEvent
+  | OperationUpdatedEvent
+  | OperationRemovedEvent;
+
+export type DiagramEvent = NodeMovedEvent;
 
 export type WsStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -111,11 +131,14 @@ export type WsStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 export class UmlWebSocketService {
   private client!: Client;
   private eventSubject = new Subject<UmlEvent>();
+  private layoutEventSubject = new Subject<DiagramEvent>();
   private statusSubject = new Subject<WsStatus>();
 
   /** Stream de eventos recibidos */
   events$: Observable<UmlEvent> = this.eventSubject.asObservable();
-  /** Stream del estado de conexión */
+  /** Stream de eventos de layout recibidos */
+  layoutEvents$: Observable<DiagramEvent> = this.layoutEventSubject.asObservable();
+  /** Stream del estado de conexin */
   status$: Observable<WsStatus> = this.statusSubject.asObservable();
 
   /**
@@ -144,6 +167,13 @@ export class UmlWebSocketService {
             (message: IMessage) => {
               const event: UmlEvent = JSON.parse(message.body);
               this.eventSubject.next(event);
+            }
+          );
+          this.client.subscribe(
+            `/topic/projects/${projectId}/diagram`,
+            (message: IMessage) => {
+              const event: DiagramEvent = JSON.parse(message.body);
+              this.layoutEventSubject.next(event);
             }
           );
           resolve();
