@@ -173,7 +173,7 @@ export class AppComponent implements OnInit, OnDestroy {
       if (targetClass) {
         targetClass.attributes = targetClass.attributes || [];
         const attrIndex = targetClass.attributes.findIndex(a => a.id === event.attributeId);
-        
+
         if (attrIndex !== -1) {
           // Update
           targetClass.attributes[attrIndex].name = event.name;
@@ -230,6 +230,32 @@ export class AppComponent implements OnInit, OnDestroy {
         this.loadModel();
         return;
       }
+    } else if ('eventType' in event && event.eventType === 'OPERATION_UPDATED') {
+      const targetClass = this.classes.find(c => c.id === event.classId);
+      if (targetClass) {
+        targetClass.operations = targetClass.operations || [];
+        const opIndex = targetClass.operations.findIndex(o => o.id === event.operationId);
+
+        if (opIndex !== -1) {
+          targetClass.operations[opIndex] = {
+            id: event.operationId,
+            name: event.name,
+            returnType: event.returnType,
+            visibility: event.visibility,
+            orderIndex: event.orderIndex,
+            parameters: event.parameters
+          };
+          this.eventLog.unshift(`OPERATION_UPDATED "${event.name}" v${event.modelVersion}`);
+          this.upsertClass(targetClass);
+          this.currentVersion = event.modelVersion;
+        } else {
+          this.loadModel();
+          return;
+        }
+      } else {
+        this.loadModel();
+        return;
+      }
     } else if ('className' in event) {
       // Es ClassCreatedEvent
       this.upsertClass({ id: event.classId, name: event.className, attributes: [], operations: [] });
@@ -279,7 +305,7 @@ export class AppComponent implements OnInit, OnDestroy {
   addAttribute(cls: UmlClassDto): void {
     const attrName = prompt('Nombre del nuevo atributo:');
     if (!attrName || attrName.trim() === '') return;
-    
+
     const attrType = prompt('Tipo del atributo (ej: int, String):', 'String');
     if (!attrType || attrType.trim() === '') return;
 
@@ -506,6 +532,101 @@ export class AppComponent implements OnInit, OnDestroy {
           this.loadModel();
         } else if (err.status === 404) {
           this.errorMessage = 'Proyecto o Clase no encontrado';
+        } else {
+          this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+        }
+      }
+    });
+  }
+
+  updateOperation(cls: UmlClassDto, op: any): void {
+    const opName = prompt('Editar nombre de la operación:', op.name);
+    if (!opName || opName.trim() === '') return;
+
+    const opReturnType = prompt(`Editar tipo de retorno de ${opName.trim()}:`, op.returnType);
+    if (!opReturnType || opReturnType.trim() === '') return;
+
+    const validVisibilities = ['PUBLIC', 'PRIVATE', 'PROTECTED', 'PACKAGE'];
+    let opVisibility = prompt(`Editar visibilidad (PUBLIC, PRIVATE, PROTECTED, PACKAGE) de ${opName.trim()}:`, op.visibility);
+    if (!opVisibility || opVisibility.trim() === '') return;
+    opVisibility = opVisibility.trim().toUpperCase();
+    if (!validVisibilities.includes(opVisibility)) {
+      this.errorMessage = `Visibilidad inválida: "${opVisibility}".`;
+      return;
+    }
+
+    const parameters: { id: string | null, name: string, type: string }[] = [];
+
+    let paramIndex = 1;
+    for (const existingParam of (op.parameters || [])) {
+      const paramName = prompt(
+        `Editar parámetro #${paramIndex} (anteriormente ${existingParam.name}: ${existingParam.type}) — nombre\n(deja vacío para eliminar este parámetro y detener la precarga):`, existingParam.name);
+
+      if (!paramName || paramName.trim() === '') {
+          break;
+      }
+
+      const paramType = prompt(`Editar tipo de "${paramName.trim()}":`, existingParam.type);
+      if (!paramType || paramType.trim() === '') break;
+
+      parameters.push({ id: existingParam.id, name: paramName.trim(), type: paramType.trim() });
+      paramIndex++;
+    }
+
+    while (true) {
+      const paramName = prompt(
+        `Parámetro #${paramIndex} (NUEVO) — nombre\n(deja vacío y pulsa Aceptar para finalizar):`);
+      if (!paramName || paramName.trim() === '') break;
+      const paramType = prompt(`Parámetro #${paramIndex} — tipo de "${paramName.trim()}":`, 'String');
+      if (!paramType || paramType.trim() === '') break;
+      parameters.push({ id: null, name: paramName.trim(), type: paramType.trim() });
+      paramIndex++;
+    }
+
+    this.errorMessage = '';
+
+    this.umlService.updateOperation(this.projectId, cls.id, op.id, {
+      commandId: uuidv4(),
+      participantId: 'browser-A',
+      expectedVersion: this.currentVersion,
+      name: opName.trim(),
+      returnType: opReturnType.trim(),
+      visibility: opVisibility,
+      parameters
+    }).subscribe({
+      next: (response) => {
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) {
+          this.loadModel();
+          return;
+        }
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+        const targetClass = this.classes.find(c => c.id === cls.id);
+        if (targetClass) {
+          targetClass.operations = targetClass.operations || [];
+          const index = targetClass.operations.findIndex(o => o.id === op.id);
+          if (index !== -1) {
+            targetClass.operations[index] = {
+              id: response.operationId,
+              name: response.name,
+              returnType: response.returnType,
+              visibility: response.visibility,
+              orderIndex: response.orderIndex,
+              parameters: response.parameters
+            };
+            this.upsertClass(targetClass);
+          }
+        }
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.errorMessage = 'Conflicto de versión detectado. Resincronizando estado automáticamente...';
+          this.loadModel();
+        } else if (err.status === 404) {
+          this.errorMessage = 'Proyecto, Clase u Operación no encontrado';
         } else {
           this.errorMessage = 'Error: ' + (err.error?.error || err.message);
         }

@@ -138,3 +138,15 @@ Esta matriz garantiza la regla del docente:
 | F2.3.1-04 | STOMP broadcast OPERATION_ADDED con parÃ¡metros | `[FASE 2.3.1]` | Demo A/B | `[OK]` |
 | F2.3.1-05 | PolÃ­tica de Sobrecarga (Overloading) de Firmas UML | `[FASE 2.3.1]` | `UmlClassTest` | `[OK]` |
 | F2.3.1-06 | Frontend notaciÃ³n UML (`+ nombre(p: Tipo): Ret`) | `[FASE 2.3.1]` | Demo A/B y F5 | `[OK]` |
+---
+
+## Componentes de Fase 2.3.2 (Update Operation + Parameters)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F2.3.2-01 | PUT /api/projects/{projectId}/classes/{classId}/operations/{operationId} | [FASE 2.3.2] | UpdateOperationApiIT | [OK] |
+| F2.3.2-02 | Bidireccionalidad Operation->Parameter para dirty-checking estable | [FASE 2.3.2] | UpdateOperationTransactionalIT | [OK] |
+| F2.3.2-03 | STOMP broadcast OPERATION_UPDATED + Fix STOMP test | [FASE 2.3.2] | UpdateOperationStompIT | [OK] |
+| F2.3.2-04 | Fix markModified monotónico forzado para @Version | [FASE 2.3.2] | UpdateOperationTransactionalIT | [OK] |
+| F2.3.2-05 | Fix Caché GET /model en navegadores
+o-cache | [FASE 2.3.2] | Demo F5 A/B | [OK] |

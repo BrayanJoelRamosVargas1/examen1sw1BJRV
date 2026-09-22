@@ -133,7 +133,7 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                                         newParam.setName(domainParam.getName());
                                         newParam.setType(domainParam.getType());
                                         newParam.setOrderIndex(paramIndex);
-                                        existingOp.get().getParameters().add(newParam);
+                                        existingOp.get().addParameter(newParam);
                                     }
                                     paramIndex++;
                                 }
@@ -153,9 +153,8 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                                     paramEntity.setName(domainParam.getName());
                                     paramEntity.setType(domainParam.getType());
                                     paramEntity.setOrderIndex(paramIndex++);
-                                    paramEntities.add(paramEntity);
+                                    newOp.addParameter(paramEntity);
                                 }
-                                newOp.setParameters(paramEntities);
                                 classEntity.getOperations().add(newOp);
                             }
                         }
@@ -189,9 +188,8 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                                 paramEntity.setName(domainParam.getName());
                                 paramEntity.setType(domainParam.getType());
                                 paramEntity.setOrderIndex(paramIndex++);
-                                paramEntities.add(paramEntity);
+                                opEntity.addParameter(paramEntity);
                             }
-                            opEntity.setParameters(paramEntities);
                             return opEntity;
                         }).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
                         entity.addClass(newChild);
@@ -308,9 +306,8 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                     paramEntity.setName(domainParam.getName());
                     paramEntity.setType(domainParam.getType());
                     paramEntity.setOrderIndex(paramIndex++);
-                    paramEntities.add(paramEntity);
+                    opEntity.addParameter(paramEntity);
                 }
-                opEntity.setParameters(paramEntities);
                 return opEntity;
             }).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
             

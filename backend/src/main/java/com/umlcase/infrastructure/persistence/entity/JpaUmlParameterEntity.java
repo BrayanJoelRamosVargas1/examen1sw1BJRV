@@ -20,8 +20,12 @@ public class JpaUmlParameterEntity {
     private UUID id;
 
     private String name;
-    
+
     private String type;
-    
+
     private int orderIndex;
+
+    @jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
+    @jakarta.persistence.JoinColumn(name = "operation_id")
+    private JpaUmlOperationEntity operation;
 }

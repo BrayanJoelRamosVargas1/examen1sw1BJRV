@@ -25,19 +25,22 @@ public class UmlProjectController {
     private final com.umlcase.application.handler.UpdateAttributeHandler updateAttributeHandler;
     private final com.umlcase.application.handler.RemoveAttributeHandler removeAttributeHandler;
     private final com.umlcase.application.handler.AddOperationHandler addOperationHandler;
+    private final com.umlcase.application.handler.UpdateOperationHandler updateOperationHandler;
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
                                 com.umlcase.application.handler.AddAttributeHandler addAttributeHandler,
                                 com.umlcase.application.handler.UpdateAttributeHandler updateAttributeHandler,
                                 com.umlcase.application.handler.RemoveAttributeHandler removeAttributeHandler,
-                                com.umlcase.application.handler.AddOperationHandler addOperationHandler) {
+                                com.umlcase.application.handler.AddOperationHandler addOperationHandler,
+                                com.umlcase.application.handler.UpdateOperationHandler updateOperationHandler) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
         this.updateAttributeHandler = updateAttributeHandler;
         this.removeAttributeHandler = removeAttributeHandler;
         this.addOperationHandler = addOperationHandler;
+        this.updateOperationHandler = updateOperationHandler;
     }
 
     @GetMapping("/model")
@@ -68,7 +71,11 @@ public class UmlProjectController {
                 .collect(Collectors.toList());
 
         UmlModelDto dto = new UmlModelDto(model.getProjectId(), model.getVersion(), classes);
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                .header("Pragma", "no-cache")
+                .header("Expires", "0")
+                .body(dto);
     }
 
     @org.springframework.web.bind.annotation.PatchMapping("/classes/{classId}")
@@ -194,5 +201,46 @@ public class UmlProjectController {
                 .build();
                 
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(response);
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/classes/{classId}/operations/{operationId}")
+    public ResponseEntity<com.umlcase.infrastructure.web.dto.UpdateOperationResponse> updateOperation(
+            @PathVariable UUID projectId,
+            @PathVariable UUID classId,
+            @PathVariable UUID operationId,
+            @org.springframework.web.bind.annotation.RequestBody com.umlcase.infrastructure.web.dto.UpdateOperationRequest request) {
+
+        var command = new com.umlcase.application.command.UpdateOperationCommand(
+                request.commandId() != null ? request.commandId() : UUID.randomUUID(),
+                projectId,
+                request.participantId(),
+                request.expectedVersion(),
+                classId,
+                operationId,
+                request.name(),
+                request.returnType(),
+                com.umlcase.domain.model.Visibility.valueOf(request.visibility()),
+                request.parameters() != null ? request.parameters().stream().map(p ->
+                        new com.umlcase.application.command.UpdateOperationCommand.ParameterData(p.id(), p.name(), p.type())
+                ).collect(Collectors.toList()) : java.util.Collections.emptyList()
+        );
+
+        var event = updateOperationHandler.handle(command);
+
+        var response = new com.umlcase.infrastructure.web.dto.UpdateOperationResponse(
+                event.commandId(),
+                event.classId(),
+                event.operationId(),
+                event.name(),
+                event.returnType(),
+                event.visibility().name(),
+                event.orderIndex(),
+                event.parameters().stream().map(p ->
+                        new com.umlcase.infrastructure.web.dto.UmlParameterDto(p.id(), p.name(), p.type(), p.orderIndex())
+                ).collect(Collectors.toList()),
+                event.modelVersion()
+        );
+
+        return ResponseEntity.ok(response);
     }
 }

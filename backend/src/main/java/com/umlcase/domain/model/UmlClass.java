@@ -123,6 +123,30 @@ public final class UmlClass {
         return true;
     }
 
+    /**
+     * Actualiza una operación existente reemplazando sus propiedades y parámetros.
+     * Valida que no se duplique la firma con OTRA operación de la clase.
+     */
+    public void updateOperation(UUID operationId, String newName, String newReturnType, Visibility newVisibility, List<UmlParameter> newParameters) {
+        UmlOperation target = operations.stream()
+                .filter(o -> o.getId().equals(operationId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("La operación con id " + operationId + " no existe en la clase " + this.name));
+
+        UmlOperation temp = new UmlOperation(operationId, newName, newReturnType, newVisibility, target.getOrderIndex());
+        if (newParameters != null) {
+            newParameters.forEach(temp::addParameter);
+        }
+
+        boolean duplicate = operations.stream()
+                .anyMatch(o -> !o.getId().equals(operationId) && hasSameSignature(o, temp));
+        if (duplicate) {
+            throw new IllegalArgumentException("Ya existe otra operación con la misma firma en la clase '" + this.name + "'");
+        }
+
+        target.update(newName, newReturnType, newVisibility, newParameters);
+    }
+
     /** Elimina un atributo por id. */
     public void removeAttribute(UUID attributeId) {
         Objects.requireNonNull(attributeId, "attributeId no puede ser null");

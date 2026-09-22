@@ -63,6 +63,17 @@ public final class UmlOperation {
         parameters.removeIf(p -> p.getId().equals(paramId));
     }
 
+    public void update(String newName, String newReturnType, Visibility newVisibility, List<UmlParameter> newParameters) {
+        this.rename(newName);
+        this.changeReturnType(newReturnType);
+        this.changeVisibility(newVisibility);
+
+        this.parameters.clear();
+        if (newParameters != null) {
+            newParameters.forEach(this::addParameter);
+        }
+    }
+
     // ─── Getters ──────────────────────────────────────────────────────────────
 
     public UUID getId()           { return id; }

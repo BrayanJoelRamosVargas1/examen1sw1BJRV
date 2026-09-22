@@ -134,6 +134,12 @@ public final class UmlModel {
         targetClass.removeAttribute(attributeId);
     }
 
+    public void updateOperation(UUID classId, UUID operationId, String name, String returnType, Visibility visibility, List<UmlParameter> parameters) {
+        UmlClass targetClass = findClassById(classId)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró la clase con id " + classId));
+        targetClass.updateOperation(operationId, name, returnType, visibility, parameters);
+    }
+
     /**
      * Agrega una relación entre dos clases.
      * Valida que las clases referenciadas existan en el modelo.

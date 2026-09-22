@@ -84,6 +84,7 @@
               <li *ngFor="let op of cls.operations" class="attribute-item operation-item">
                 <span class="op-visibility">{{ visibilitySymbol(op.visibility) }}</span>
                 <span class="attr-name">{{ op.name }}(<span *ngFor="let p of op.parameters; let last = last">{{p.name}}: {{p.type}}<span *ngIf="!last">, </span></span>): {{ op.returnType }}</span>
+                <button class="edit-attr-btn" (click)="updateOperation(cls, op)" [disabled]="wsStatus !== 'connected'">[editar]</button>
               </li>
             </ul>
             <ng-template #noOps><p class="empty-section">Sin operaciones</p></ng-template>

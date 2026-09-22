@@ -101,6 +101,37 @@ export interface AddOperationResponse {
   modelVersion: number;
 }
 
+export interface UpdateOperationRequest {
+  commandId: string;
+  participantId: string;
+  expectedVersion: number;
+  name: string;
+  returnType: string;
+  visibility: string;
+  parameters: {
+    id: string | null;
+    name: string;
+    type: string;
+  }[];
+}
+
+export interface UpdateOperationResponse {
+  commandId: string;
+  classId: string;
+  operationId: string;
+  name: string;
+  returnType: string;
+  visibility: string;
+  orderIndex: number;
+  parameters: {
+    id: string;
+    name: string;
+    type: string;
+    orderIndex: number;
+  }[];
+  modelVersion: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UmlService {
   constructor(private http: HttpClient) {}
@@ -174,6 +205,18 @@ export class UmlService {
   ): Observable<AddOperationResponse> {
     return this.http.post<AddOperationResponse>(
       `${API}/projects/${projectId}/classes/${classId}/operations`,
+      request
+    );
+  }
+
+  updateOperation(
+    projectId: string,
+    classId: string,
+    operationId: string,
+    request: UpdateOperationRequest
+  ): Observable<UpdateOperationResponse> {
+    return this.http.put<UpdateOperationResponse>(
+      `${API}/projects/${projectId}/classes/${classId}/operations/${operationId}`,
       request
     );
   }

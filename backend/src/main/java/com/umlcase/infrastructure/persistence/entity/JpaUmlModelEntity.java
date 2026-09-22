@@ -42,6 +42,11 @@ public class JpaUmlModelEntity {
     }
 
     public void markModified() {
-        this.lastModified = System.currentTimeMillis();
+        long current = System.currentTimeMillis();
+        if (this.lastModified >= current) {
+            this.lastModified++;
+        } else {
+            this.lastModified = current;
+        }
     }
 }
