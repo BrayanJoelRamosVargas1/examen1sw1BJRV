@@ -28,6 +28,7 @@ public class UmlProjectController {
     private final com.umlcase.application.handler.UpdateOperationHandler updateOperationHandler;
     private final com.umlcase.application.handler.RemoveOperationHandler removeOperationHandler;
     private final com.umlcase.application.port.in.AddRelationshipUseCase addRelationshipUseCase;
+    private final com.umlcase.application.port.in.UpdateRelationshipUseCase updateRelationshipUseCase;
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
@@ -37,7 +38,8 @@ public class UmlProjectController {
                                 com.umlcase.application.handler.AddOperationHandler addOperationHandler,
                                 com.umlcase.application.handler.UpdateOperationHandler updateOperationHandler,
                                 com.umlcase.application.handler.RemoveOperationHandler removeOperationHandler,
-                                com.umlcase.application.port.in.AddRelationshipUseCase addRelationshipUseCase) {
+                                com.umlcase.application.port.in.AddRelationshipUseCase addRelationshipUseCase,
+                                com.umlcase.application.port.in.UpdateRelationshipUseCase updateRelationshipUseCase) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
@@ -47,6 +49,7 @@ public class UmlProjectController {
         this.updateOperationHandler = updateOperationHandler;
         this.removeOperationHandler = removeOperationHandler;
         this.addRelationshipUseCase = addRelationshipUseCase;
+        this.updateRelationshipUseCase = updateRelationshipUseCase;
     }
 
     @GetMapping("/model")
@@ -323,5 +326,35 @@ public class UmlProjectController {
         );
 
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(response);
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/relationships/{relationshipId}")
+    public ResponseEntity<com.umlcase.infrastructure.web.dto.UpdateRelationshipResponse> updateRelationship(
+            @PathVariable UUID projectId,
+            @PathVariable UUID relationshipId,
+            @org.springframework.web.bind.annotation.RequestBody com.umlcase.infrastructure.web.dto.UpdateRelationshipRequest request) {
+
+        var command = new com.umlcase.application.command.UmlCommand.UpdateRelationship(
+                request.commandId() != null ? request.commandId() : UUID.randomUUID(),
+                projectId,
+                request.participantId(),
+                request.expectedVersion(),
+                relationshipId,
+                request.type(),
+                request.sourceMultiplicity(),
+                request.targetMultiplicity()
+        );
+
+        var event = updateRelationshipUseCase.handle(command);
+
+        var response = new com.umlcase.infrastructure.web.dto.UpdateRelationshipResponse(
+                event.relationshipId(),
+                event.type(),
+                event.sourceMultiplicity(),
+                event.targetMultiplicity(),
+                event.modelVersion()
+        );
+
+        return ResponseEntity.ok(response);
     }
 }

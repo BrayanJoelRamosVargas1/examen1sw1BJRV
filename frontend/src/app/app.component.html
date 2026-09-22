@@ -73,6 +73,7 @@
         --[{{rel.type}}]-->
         <strong>{{getClassName(rel.targetClassId)}}</strong>
         <span *ngIf="rel.targetMultiplicity"> ({{rel.targetMultiplicity}})</span>
+        <button class="edit-attr-btn" (click)="updateRelationship(rel)" [disabled]="wsStatus !== 'connected'">[editar]</button>
       </li>
     </ul>
   </section>

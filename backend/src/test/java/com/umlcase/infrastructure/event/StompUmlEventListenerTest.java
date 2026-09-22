@@ -44,4 +44,25 @@ class StompUmlEventListenerTest {
         // Assert
         verify(messagingTemplate).convertAndSend("/topic/projects/" + projectId, event);
     }
+
+    @Test
+    void shouldForwardRelationshipUpdatedEventToStompTopic() {
+        // Arrange
+        UUID projectId = UUID.randomUUID();
+        com.umlcase.application.event.RelationshipUpdatedEvent event = new com.umlcase.application.event.RelationshipUpdatedEvent(
+                UUID.randomUUID(),
+                projectId,
+                UUID.randomUUID(),
+                RelationshipType.AGGREGATION,
+                "1",
+                "*" ,
+                3L
+        );
+
+        // Act
+        listener.handleRelationshipUpdatedEvent(event);
+
+        // Assert
+        verify(messagingTemplate).convertAndSend("/topic/projects/" + projectId, event);
+    }
 }

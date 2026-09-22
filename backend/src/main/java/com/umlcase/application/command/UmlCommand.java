@@ -42,6 +42,7 @@ public sealed interface UmlCommand permits
         UmlCommand.RemoveOperation,
         UmlCommand.AddRelationship,
         UmlCommand.RemoveRelationship,
+        UmlCommand.UpdateRelationship,
         UmlCommand.MoveNode,
         UpdateAttributeCommand {
 
@@ -138,6 +139,17 @@ public sealed interface UmlCommand permits
             RelationshipType type,
             UUID sourceClassId,
             UUID targetClassId,
+            String sourceMultiplicity,
+            String targetMultiplicity
+    ) implements UmlCommand {}
+
+    record UpdateRelationship(
+            UUID commandId,
+            UUID projectId,
+            String participantId,
+            long expectedVersion,
+            UUID relationshipId,
+            RelationshipType type,
             String sourceMultiplicity,
             String targetMultiplicity
     ) implements UmlCommand {}

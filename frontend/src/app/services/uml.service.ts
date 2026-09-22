@@ -173,6 +173,23 @@ export interface AddRelationshipResponse {
   relationship: UmlRelationshipDto;
 }
 
+export interface UpdateRelationshipRequest {
+  commandId: string;
+  participantId: string;
+  expectedVersion: number;
+  type: string;
+  sourceMultiplicity?: string;
+  targetMultiplicity?: string;
+}
+
+export interface UpdateRelationshipResponse {
+  relationshipId: string;
+  type: string;
+  sourceMultiplicity?: string;
+  targetMultiplicity?: string;
+  modelVersion: number;
+}
+
 export interface SaveNodeViewResponse {
   commandId: string;
   classId: string;
@@ -299,6 +316,17 @@ export class UmlService {
   ): Observable<AddRelationshipResponse> {
     return this.http.post<AddRelationshipResponse>(
       `${API}/projects/${projectId}/relationships`,
+      request
+    );
+  }
+
+  updateRelationship(
+    projectId: string,
+    relationshipId: string,
+    request: UpdateRelationshipRequest
+  ): Observable<UpdateRelationshipResponse> {
+    return this.http.put<UpdateRelationshipResponse>(
+      `${API}/projects/${projectId}/relationships/${relationshipId}`,
       request
     );
   }

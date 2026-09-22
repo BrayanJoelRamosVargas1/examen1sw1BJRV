@@ -121,6 +121,16 @@ export interface RelationshipAddedEvent {
   sourceClassId: string;
   targetClassId: string;
   relationshipType: string;
+  targetMultiplicity: string;
+  modelVersion: number;
+}
+
+export interface RelationshipUpdatedEvent {
+  eventType: 'RELATIONSHIP_UPDATED';
+  commandId: string;
+  projectId: string;
+  relationshipId: string;
+  type: string;
   sourceMultiplicity: string;
   targetMultiplicity: string;
   modelVersion: number;
@@ -135,7 +145,8 @@ export type UmlEvent =
   | OperationAddedEvent
   | OperationUpdatedEvent
   | OperationRemovedEvent
-  | RelationshipAddedEvent;
+  | RelationshipAddedEvent
+  | RelationshipUpdatedEvent;
 
 export type DiagramEvent = NodeMovedEvent;
 

@@ -21,7 +21,7 @@ import java.util.UUID;
 public final class UmlRelationship {
 
     private final UUID id;
-    private final RelationshipType type;
+    private RelationshipType type;
     private final UUID sourceClassId;
     private final UUID targetClassId;
     private String sourceMultiplicity;
@@ -57,6 +57,12 @@ public final class UmlRelationship {
 
     public void setSourceMultiplicity(String m) { this.sourceMultiplicity = m; }
     public void setTargetMultiplicity(String m) { this.targetMultiplicity = m; }
+
+    public void update(RelationshipType newType, String newSourceMultiplicity, String newTargetMultiplicity) {
+        this.type = Objects.requireNonNull(newType, "type no puede ser null");
+        this.sourceMultiplicity = newSourceMultiplicity;
+        this.targetMultiplicity = newTargetMultiplicity;
+    }
 
     // ─── Getters ──────────────────────────────────────────────────────────────
 

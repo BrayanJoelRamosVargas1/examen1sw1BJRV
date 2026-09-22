@@ -217,3 +217,14 @@ pm run build | [OK] |
 | F3.1-03 | STOMP broadcast RELATIONSHIP_ADDED | `[FASE 3.1]` | Node script / Demo | `[OK]` |
 | F3.1-04 | GET /model serializa relationships | `[FASE 3.1]` | `AddRelationshipApiIT` | `[OK]` |
 | F3.1-05 | Fix bug STOMP propagation | `[FASE 3.1]` | `StompUmlEventListenerTest` | `[OK]` |
+
+---
+
+## Componentes de Fase 3.2 (Update Relationship)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F3.2-01 | PUT `/api/projects/{projectId}/relationships/{relationshipId}` | `[FASE 3.2]` | `UpdateRelationshipApiIT` | `[OK]` |
+| F3.2-02 | STOMP broadcast RELATIONSHIP_UPDATED | `[FASE 3.2]` | Demo A/B STOMP real | `[OK]` |
+| F3.2-03 | Inmutabilidad de endpoints/extremos topológicos | `[FASE 3.2]` | `UpdateRelationshipTransactionalIT` | `[OK]` |
+| F3.2-04 | Update muta sólo metadata (tipo y multiplicidades) | `[FASE 3.2]` | `UpdateRelationshipHandlerTest` | `[OK]` |

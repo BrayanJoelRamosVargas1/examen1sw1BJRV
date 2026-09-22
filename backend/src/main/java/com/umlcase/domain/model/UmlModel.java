@@ -102,12 +102,12 @@ public final class UmlModel {
     public UmlAttribute addAttribute(UUID classId, String name, String type, Visibility visibility) {
         UmlClass targetClass = findClassById(classId)
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró la clase con id " + classId));
-        
+
         int nextOrderIndex = targetClass.getAttributes().stream()
                 .mapToInt(UmlAttribute::getOrderIndex)
                 .max()
                 .orElse(-1) + 1;
-                
+
         UmlAttribute newAttribute = new UmlAttribute(UUID.randomUUID(), name, type, visibility, nextOrderIndex);
         targetClass.addAttribute(newAttribute);
         return newAttribute;
@@ -153,6 +153,19 @@ public final class UmlModel {
                 "Las clases fuente y destino deben existir en el modelo antes de crear una relación");
         }
         relationships.add(relationship);
+    }
+
+    /**
+     * Actualiza una relación existente.
+     * Conserva el relationshipId, actualiza el tipo y las multiplicidades.
+     */
+    public void updateRelationship(UUID relationshipId, RelationshipType type, String sourceMultiplicity, String targetMultiplicity) {
+        UmlRelationship relationship = relationships.stream()
+                .filter(r -> r.getId().equals(relationshipId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró la relación con id " + relationshipId));
+
+        relationship.update(type, sourceMultiplicity, targetMultiplicity);
     }
 
     /** Elimina una relación por id. */

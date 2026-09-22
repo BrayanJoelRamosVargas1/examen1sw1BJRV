@@ -368,6 +368,19 @@ export class AppComponent implements OnInit, OnDestroy {
         this.eventLog.unshift(`RELATIONSHIP_ADDED v${e.modelVersion}`);
         this.currentVersion = e.modelVersion;
       }
+    } else if ('eventType' in event && event.eventType === 'RELATIONSHIP_UPDATED') {
+      const e = event as any;
+      const index = this.relationships.findIndex(r => r.id === e.relationshipId);
+      if (index !== -1) {
+        this.relationships[index].type = e.type;
+        this.relationships[index].sourceMultiplicity = e.sourceMultiplicity;
+        this.relationships[index].targetMultiplicity = e.targetMultiplicity;
+        this.eventLog.unshift(`RELATIONSHIP_UPDATED v${e.modelVersion}`);
+        this.currentVersion = e.modelVersion;
+      } else {
+        this.loadModel();
+        return;
+      }
     } else {
       this.loadModel();
       return;
@@ -814,6 +827,59 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  updateRelationship(rel: any): void {
+    const newType = prompt('Editar tipo (ASSOCIATION, AGGREGATION, COMPOSITION, GENERALIZATION, REALIZATION, DEPENDENCY):', rel.type);
+    if (!newType || newType.trim() === '') return;
+
+    let sourceMult = rel.sourceMultiplicity || '';
+    let targetMult = rel.targetMultiplicity || '';
+
+    if (newType === 'ASSOCIATION' || newType === 'AGGREGATION' || newType === 'COMPOSITION') {
+      sourceMult = prompt(`Editar multiplicidad origen (actual: ${sourceMult}). Deja vacío para omitir:`, sourceMult) || '';
+      targetMult = prompt(`Editar multiplicidad destino (actual: ${targetMult}). Deja vacío para omitir:`, targetMult) || '';
+    } else {
+      sourceMult = '';
+      targetMult = '';
+    }
+
+    this.errorMessage = '';
+
+    this.umlService.updateRelationship(this.projectId, rel.id, {
+      commandId: uuidv4(),
+      participantId: 'browser-A',
+      expectedVersion: this.currentVersion,
+      type: newType.trim().toUpperCase(),
+      sourceMultiplicity: sourceMult,
+      targetMultiplicity: targetMult
+    }).subscribe({
+      next: (response) => {
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) {
+          this.loadModel();
+          return;
+        }
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+        const index = this.relationships.findIndex(r => r.id === rel.id);
+        if (index !== -1) {
+          this.relationships[index].type = response.type;
+          this.relationships[index].sourceMultiplicity = response.sourceMultiplicity;
+          this.relationships[index].targetMultiplicity = response.targetMultiplicity;
+        }
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.errorMessage = 'Conflicto de versión detectado. Resincronizando estado automáticamente...';
+          this.loadModel();
+        } else {
+          this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+        }
+      }
+    });
   }
 
   addRelationship(): void {
