@@ -173,3 +173,27 @@ o-cache | [FASE 2.3.2] | Demo F5 A/B | [OK] |
 | F2.4-04 | Optimistic Locking @Version (409 Conflict) en Layout | [FASE 2.4] | UmlDiagramLayoutRepositoryAdapterIT | [OK] |
 | F2.4-05 | Invarianza: modelVersion inmutable en mutacin visual | [FASE 2.4] | SaveNodeViewTransactionalIT | [OK] |
 
+---
+
+## Componentes de Fase 2.5 (Move Node + STOMP Layout Sync)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F2.5-01 | PUT /api/projects/{projectId}/diagram/nodes/{classId} on drag end | [FASE 2.5] | Demo manual A/B | [OK] |
+| F2.5-02 | STOMP broadcast NODE_MOVED en /topic/projects/{projectId}/diagram | [FASE 2.5] | NodeMovedStompIT | [OK] |
+| F2.5-03 | Frontend Pointer Events + Posicionamiento Absoluto | [FASE 2.5] | Angular build | [OK] |
+
+---
+
+## Componentes de Fase 2.6 (Demo Integral Fase 2)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F2.6-01 | Auditoría de integridad arquitectónica (Model vs Layout) | [FASE 2.6] | Demo A/B Integral | [OK] |
+| F2.6-02 | Suite completada sin regresiones (100 tests) | [FASE 2.6] | mvnw test | [OK] |
+| F2.6-03 | Auditoría de CSS y Build estático | [FASE 2.6] | 
+pm run build | [OK] |
+
+---
+
+**FASE 2 COMPLETADA SATISFACTORIAMENTE.**
