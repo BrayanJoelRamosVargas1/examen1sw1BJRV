@@ -239,3 +239,15 @@ pm run build | [OK] |
 | F3.3-02 | STOMP broadcast RELATIONSHIP_REMOVED | `[FASE 3.3]` | Demo A/B STOMP real | `[OK]` |
 | F3.3-03 | Persistencia borrado + Optimistic Locking delegate | `[FASE 3.3]` | `RemoveRelationshipTransactionalIT` | `[OK]` |
 | F3.3-04 | Fix ModelVersionConflict (delegar @Version a JPA) | `[FASE 3.3]` | `RemoveRelationshipHandlerTest` | `[OK]` |
+
+---
+
+## Componentes de Fase 4.1 (Conflicto Concurrente Real A/B)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F4.1-01 | Política First-Wins + 409 + Rechazo (0 STOMP) | `[FASE 4.1]` | `ConcurrentModelMutationIT` | `[OK]` |
+| F4.1-02 | Protección de Frontend ante Stale HTTP (N < current) | `[FASE 4.1]` | `app.component.ts` (early return) | `[OK]` |
+| F4.1-03 | GET /model Automático (Auto-Resync sin F5) | `[FASE 4.1]` | E2E Playwright `validate-conflict.js` | `[OK]` |
+| F4.1-04 | Protección STOMP Out-of-Order (salto de versión) | `[FASE 4.1]` | Revisión manual | `[OK]` |
+| F4.1-05 | No Lost Update End-to-End | `[FASE 4.1]` | E2E Playwright `validate-conflict.js` | `[OK]` |

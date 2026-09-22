@@ -188,11 +188,15 @@ export class AppComponent implements OnInit, OnDestroy {
       name
     }).subscribe({
       next: (response) => {
-        // A actualiza su versión con la versión real persistida
-        // (sin depender de recibir su propio broadcast)
-        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
-        // Upsert: añadir si no existe (el broadcast propio puede llegar también)
-        this.upsertClass({ id: response.classId, name: response.className });
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) {
+          return; // Ignore stale HTTP
+        }
+        this.currentVersion = response.modelVersion;
+        this.upsertClass({ id: response.classId, name: response.className, attributes: [], operations: [] });
         this.newClassName = '';
       },
       error: (err) => {
@@ -429,7 +433,14 @@ export class AppComponent implements OnInit, OnDestroy {
       newName: newName.trim()
     }).subscribe({
       next: (response) => {
-        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) {
+          return; // Ignore stale HTTP
+        }
+        this.currentVersion = response.modelVersion;
         const existing = this.classes.find(c => c.id === response.classId);
         this.upsertClass({ id: response.classId, name: response.newName, attributes: existing ? existing.attributes : [], operations: existing ? existing.operations : [] });
       },
@@ -469,10 +480,7 @@ export class AppComponent implements OnInit, OnDestroy {
           return;
         }
         if (response.modelVersion < this.currentVersion) {
-          if (!this.classes.find(c => c.id === cls.id)?.attributes?.some(a => a.id === response.attribute.id)) {
-            this.loadModel();
-          }
-          return;
+          return; // Ignore stale HTTP
         }
         const clsToUpdate = this.classes.find(c => c.id === cls.id);
         if (!clsToUpdate) {
@@ -533,8 +541,7 @@ export class AppComponent implements OnInit, OnDestroy {
           return;
         }
         if (response.modelVersion < this.currentVersion) {
-          this.loadModel();
-          return;
+          return; // Ignore stale HTTP
         }
         this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
         const targetClass = this.classes.find(c => c.id === cls.id);
@@ -575,8 +582,7 @@ export class AppComponent implements OnInit, OnDestroy {
           return;
         }
         if (response.modelVersion < this.currentVersion) {
-          this.loadModel();
-          return;
+          return; // Ignore stale HTTP
         }
         const alreadyApplied = this.currentVersion >= response.modelVersion;
         this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
@@ -646,10 +652,7 @@ export class AppComponent implements OnInit, OnDestroy {
           return;
         }
         if (response.modelVersion < this.currentVersion) {
-          if (!this.classes.find(c => c.id === cls.id)?.operations?.some(o => o.id === response.operationId)) {
-            this.loadModel();
-          }
-          return;
+          return; // Ignore stale HTTP
         }
         const clsToUpdate = this.classes.find(c => c.id === cls.id);
         if (!clsToUpdate) {
@@ -744,8 +747,7 @@ export class AppComponent implements OnInit, OnDestroy {
           return;
         }
         if (response.modelVersion < this.currentVersion) {
-          this.loadModel();
-          return;
+          return; // Ignore stale HTTP
         }
         this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
         const targetClass = this.classes.find(c => c.id === cls.id);
@@ -868,8 +870,7 @@ export class AppComponent implements OnInit, OnDestroy {
           return;
         }
         if (response.modelVersion < this.currentVersion) {
-          this.loadModel();
-          return;
+          return; // Ignore stale HTTP
         }
         this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
         const index = this.relationships.findIndex(r => r.id === rel.id);
@@ -919,10 +920,7 @@ export class AppComponent implements OnInit, OnDestroy {
           return;
         }
         if (response.modelVersion < this.currentVersion) {
-          if (!this.relationships.some(r => r.id === response.relationshipId)) {
-            this.loadModel();
-          }
-          return;
+          return; // Ignore stale HTTP
         }
 
         if (!this.relationships.some(r => r.id === response.relationshipId)) {
@@ -959,8 +957,7 @@ export class AppComponent implements OnInit, OnDestroy {
           return;
         }
         if (response.modelVersion < this.currentVersion) {
-          this.loadModel();
-          return;
+          return; // Ignore stale HTTP
         }
         this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
         this.relationships = this.relationships.filter(r => r.id !== rel.id);
