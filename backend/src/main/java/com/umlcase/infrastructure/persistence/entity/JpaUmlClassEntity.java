@@ -24,5 +24,10 @@ public class JpaUmlClassEntity {
     @jakarta.persistence.OneToMany(cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @jakarta.persistence.JoinColumn(name = "class_id", nullable = false)
     @jakarta.persistence.OrderBy("orderIndex ASC")
-    private java.util.List<JpaUmlAttributeEntity> attributes = new java.util.ArrayList<>();
+    private java.util.Set<JpaUmlAttributeEntity> attributes = new java.util.LinkedHashSet<>();
+
+    @jakarta.persistence.OneToMany(cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @jakarta.persistence.JoinColumn(name = "class_id", nullable = false)
+    @jakarta.persistence.OrderBy("orderIndex ASC")
+    private java.util.Set<JpaUmlOperationEntity> operations = new java.util.LinkedHashSet<>();
 }

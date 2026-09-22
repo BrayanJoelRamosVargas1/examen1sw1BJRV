@@ -125,3 +125,16 @@ Esta matriz garantiza la regla del docente:
 | F2.2.3-01 | DELETE `/api/projects/{projectId}/classes/{classId}/attributes/{attributeId}` | `[FASE 2.2.3]` | `RemoveAttributeApiIT` | `[OK]` |
 | F2.2.3-02 | STOMP broadcast ATTRIBUTE_REMOVED | `[FASE 2.2.3]` | Demo A/B | `[OK]` |
 | F2.2.3-03 | Estabilización Race Condition STOMP/HTTP/GET | `[FASE 2.2.3]` | Demo A/B y F5 | `[OK]` |
+
+---
+
+## Componentes de Fase 2.3.1 (Add Operation + Parameters)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F2.3.1-01 | POST `/api/projects/{projectId}/classes/{classId}/operations` | `[FASE 2.3.1]` | `AddOperationApiIT` | `[OK]` |
+| F2.3.1-02 | Persistencia V4 (uml_operations, uml_parameters) y orden | `[FASE 2.3.1]` | `AddOperationTransactionalIT` | `[OK]` |
+| F2.3.1-03 | Refactor JPA a `Set<LinkedHashSet>` anti MultipleBagFetchException | `[FASE 2.3.1]` | Suite 75 tests completa | `[OK]` |
+| F2.3.1-04 | STOMP broadcast OPERATION_ADDED con parámetros | `[FASE 2.3.1]` | Demo A/B | `[OK]` |
+| F2.3.1-05 | Política de Sobrecarga (Overloading) de Firmas UML | `[FASE 2.3.1]` | `UmlClassTest` | `[OK]` |
+| F2.3.1-06 | Frontend notación UML (`+ nombre(p: Tipo): Ret`) | `[FASE 2.3.1]` | Demo A/B y F5 | `[OK]` |

@@ -210,6 +210,11 @@ class CreateClassHandlerTest {
             // Ignorado en estos tests
         }
 
+        @Override
+        public void publish(com.umlcase.application.event.OperationAddedEvent event) {
+            // Ignorado en estos tests
+        }
+
         List<ClassCreatedEvent> publishedEvents() { return events; }
     }
 }

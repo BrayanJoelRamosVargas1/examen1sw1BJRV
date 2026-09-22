@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { UmlService, UmlClassDto } from './services/uml.service';
-import { UmlWebSocketService, ClassCreatedEvent, ClassRenamedEvent, UmlEvent, WsStatus, AttributeUpdatedEvent } from './services/uml-websocket.service';
+import { UmlWebSocketService, ClassCreatedEvent, ClassRenamedEvent, UmlEvent, WsStatus, AttributeUpdatedEvent, OperationAddedEvent } from './services/uml-websocket.service';
 import { v4 as uuidv4 } from 'uuid';
 
 // UUID del proyecto temporal de desarrollo (Fase 1)
@@ -154,7 +154,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if ('newName' in event) {
       // Es ClassRenamedEvent
       const targetClass = this.classes.find(c => c.id === event.classId);
-      this.upsertClass({ id: event.classId, name: event.newName, attributes: targetClass ? targetClass.attributes : [] });
+      this.upsertClass({ id: event.classId, name: event.newName, attributes: targetClass ? targetClass.attributes : [], operations: targetClass ? targetClass.operations : [] });
       this.currentVersion = event.modelVersion;
       this.eventLog.unshift(`CLASS_RENAMED "${event.newName}" v${event.modelVersion}`);
     } else if ('eventType' in event && event.eventType === 'ATTRIBUTE_REMOVED') {
@@ -211,9 +211,28 @@ export class AppComponent implements OnInit, OnDestroy {
         this.loadModel();
         return;
       }
+    } else if ('eventType' in event && event.eventType === 'OPERATION_ADDED') {
+      const targetClass = this.classes.find(c => c.id === event.classId);
+      if (targetClass) {
+        targetClass.operations = targetClass.operations || [];
+        targetClass.operations.push({
+          id: event.operationId,
+          name: event.name,
+          returnType: event.returnType,
+          visibility: event.visibility,
+          orderIndex: event.orderIndex,
+          parameters: event.parameters
+        });
+        this.eventLog.unshift(`OPERATION_ADDED "${event.name}" v${event.modelVersion}`);
+        this.upsertClass(targetClass);
+        this.currentVersion = event.modelVersion;
+      } else {
+        this.loadModel();
+        return;
+      }
     } else if ('className' in event) {
       // Es ClassCreatedEvent
-      this.upsertClass({ id: event.classId, name: event.className, attributes: [] });
+      this.upsertClass({ id: event.classId, name: event.className, attributes: [], operations: [] });
       this.currentVersion = event.modelVersion;
       this.eventLog.unshift(`CLASS_CREATED "${event.className}" v${event.modelVersion}`);
     } else {
@@ -242,7 +261,7 @@ export class AppComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
         const existing = this.classes.find(c => c.id === response.classId);
-        this.upsertClass({ id: response.classId, name: response.newName, attributes: existing ? existing.attributes : [] });
+        this.upsertClass({ id: response.classId, name: response.newName, attributes: existing ? existing.attributes : [], operations: existing ? existing.operations : [] });
       },
       error: (err) => {
         if (err.status === 409) {
@@ -408,6 +427,101 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       }
     });
+  }
+
+  addOperation(cls: UmlClassDto): void {
+    const opName = prompt('Nombre de la nueva operación:');
+    if (!opName || opName.trim() === '') return;
+
+    const opReturnType = prompt('Tipo de retorno (ej: void, String, int):', 'void');
+    if (!opReturnType || opReturnType.trim() === '') return;
+
+    // Pedir visibilidad explícitamente — requerida por el contrato AddOperationRequest
+    const validVisibilities = ['PUBLIC', 'PRIVATE', 'PROTECTED', 'PACKAGE'];
+    let opVisibility = prompt('Visibilidad (PUBLIC, PRIVATE, PROTECTED, PACKAGE):', 'PUBLIC');
+    if (!opVisibility || opVisibility.trim() === '') return;
+    opVisibility = opVisibility.trim().toUpperCase();
+    if (!validVisibilities.includes(opVisibility)) {
+      this.errorMessage = `Visibilidad inválida: "${opVisibility}". Use PUBLIC, PRIVATE, PROTECTED o PACKAGE.`;
+      return;
+    }
+
+    // Captura de parámetros con numeración para que el usuario sepa cuándo puede parar
+    const parameters: { name: string, type: string }[] = [];
+    let paramIndex = 1;
+    while (true) {
+      const paramName = prompt(
+        `Parámetro #${paramIndex} — nombre\n(deja vacío y pulsa Aceptar para finalizar):`);
+      if (!paramName || paramName.trim() === '') break;
+      const paramType = prompt(`Parámetro #${paramIndex} — tipo de "${paramName.trim()}":`, 'String');
+      if (!paramType || paramType.trim() === '') break;
+      parameters.push({ name: paramName.trim(), type: paramType.trim() });
+      paramIndex++;
+    }
+
+    this.errorMessage = '';
+
+    this.umlService.addOperation(this.projectId, cls.id, {
+      commandId: uuidv4(),
+      participantId: 'browser-A',
+      expectedVersion: this.currentVersion,
+      name: opName.trim(),
+      returnType: opReturnType.trim(),
+      visibility: opVisibility,
+      parameters
+    }).subscribe({
+      next: (response) => {
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) {
+          if (!this.classes.find(c => c.id === cls.id)?.operations?.some(o => o.id === response.operationId)) {
+            this.loadModel();
+          }
+          return;
+        }
+        const clsToUpdate = this.classes.find(c => c.id === cls.id);
+        if (!clsToUpdate) {
+          this.loadModel();
+          return;
+        }
+        clsToUpdate.operations = clsToUpdate.operations || [];
+        if (!clsToUpdate.operations.some(o => o.id === response.operationId)) {
+            clsToUpdate.operations.push({
+              id: response.operationId,
+              name: response.name,
+              returnType: response.returnType,
+              visibility: response.visibility,
+              orderIndex: response.orderIndex,
+              parameters: response.parameters
+            });
+        }
+        this.upsertClass(clsToUpdate);
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.errorMessage = 'Conflicto de versión detectado. Resincronizando estado automáticamente...';
+          this.loadModel();
+        } else if (err.status === 404) {
+          this.errorMessage = 'Proyecto o Clase no encontrado';
+        } else {
+          this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+        }
+      }
+    });
+  }
+
+  /** Convierte el enum Visibility al símbolo UML estándar */
+  visibilitySymbol(visibility: string): string {
+    switch (visibility?.toUpperCase()) {
+      case 'PUBLIC':    return '+';
+      case 'PRIVATE':   return '-';
+      case 'PROTECTED': return '#';
+      case 'PACKAGE':   return '~';
+      default:          return '?';
+    }
   }
 
   private upsertClass(cls: UmlClassDto): void {

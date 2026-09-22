@@ -71,7 +71,7 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                         
                         // Merge attributes
                         if (classEntity.getAttributes() == null) {
-                            classEntity.setAttributes(new java.util.ArrayList<>());
+                            classEntity.setAttributes(new java.util.LinkedHashSet<>());
                         }
                         classEntity.getAttributes().removeIf(attr ->
                             domainClass.getAttributes().stream().noneMatch(ma -> ma.getId().equals(attr.getId()))
@@ -95,6 +95,70 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                                 classEntity.getAttributes().add(newAttr);
                             }
                         }
+
+                        if (classEntity.getOperations() == null) {
+                            classEntity.setOperations(new java.util.LinkedHashSet<>());
+                        }
+                        classEntity.getOperations().removeIf(op ->
+                            domainClass.getOperations().stream().noneMatch(mo -> mo.getId().equals(op.getId()))
+                        );
+                        for (com.umlcase.domain.model.UmlOperation domainOp : domainClass.getOperations()) {
+                            Optional<com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity> existingOp = classEntity.getOperations().stream()
+                                .filter(op -> op.getId().equals(domainOp.getId()))
+                                .findFirst();
+                            if (existingOp.isPresent()) {
+                                existingOp.get().setName(domainOp.getName());
+                                existingOp.get().setReturnType(domainOp.getReturnType());
+                                existingOp.get().setVisibility(domainOp.getVisibility().name());
+                                existingOp.get().setOrderIndex(domainOp.getOrderIndex());
+                                
+                                if (existingOp.get().getParameters() == null) {
+                                    existingOp.get().setParameters(new java.util.LinkedHashSet<>());
+                                }
+                                existingOp.get().getParameters().removeIf(param ->
+                                    domainOp.getParameters().stream().noneMatch(mp -> mp.getId().equals(param.getId()))
+                                );
+                                int paramIndex = 0;
+                                for (com.umlcase.domain.model.UmlParameter domainParam : domainOp.getParameters()) {
+                                    Optional<com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity> existingParam = existingOp.get().getParameters().stream()
+                                        .filter(param -> param.getId().equals(domainParam.getId()))
+                                        .findFirst();
+                                    if (existingParam.isPresent()) {
+                                        existingParam.get().setName(domainParam.getName());
+                                        existingParam.get().setType(domainParam.getType());
+                                        existingParam.get().setOrderIndex(paramIndex);
+                                    } else {
+                                        com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity newParam = new com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity();
+                                        newParam.setId(domainParam.getId());
+                                        newParam.setName(domainParam.getName());
+                                        newParam.setType(domainParam.getType());
+                                        newParam.setOrderIndex(paramIndex);
+                                        existingOp.get().getParameters().add(newParam);
+                                    }
+                                    paramIndex++;
+                                }
+                            } else {
+                                com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity newOp = new com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity();
+                                newOp.setId(domainOp.getId());
+                                newOp.setName(domainOp.getName());
+                                newOp.setReturnType(domainOp.getReturnType());
+                                newOp.setVisibility(domainOp.getVisibility().name());
+                                newOp.setOrderIndex(domainOp.getOrderIndex());
+                                
+                                java.util.Set<com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity> paramEntities = new java.util.LinkedHashSet<>();
+                                int paramIndex = 0;
+                                for (com.umlcase.domain.model.UmlParameter domainParam : domainOp.getParameters()) {
+                                    com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity paramEntity = new com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity();
+                                    paramEntity.setId(domainParam.getId());
+                                    paramEntity.setName(domainParam.getName());
+                                    paramEntity.setType(domainParam.getType());
+                                    paramEntity.setOrderIndex(paramIndex++);
+                                    paramEntities.add(paramEntity);
+                                }
+                                newOp.setParameters(paramEntities);
+                                classEntity.getOperations().add(newOp);
+                            }
+                        }
                     } else {
                         JpaUmlClassEntity newChild = new JpaUmlClassEntity();
                         newChild.setId(domainClass.getId());
@@ -107,7 +171,29 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                             attrEntity.setVisibility(a.getVisibility().name());
                             attrEntity.setOrderIndex(a.getOrderIndex());
                             return attrEntity;
-                        }).collect(java.util.stream.Collectors.toList()));
+                        }).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
+                        
+                        newChild.setOperations(domainClass.getOperations().stream().map(op -> {
+                            com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity opEntity = new com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity();
+                            opEntity.setId(op.getId());
+                            opEntity.setName(op.getName());
+                            opEntity.setReturnType(op.getReturnType());
+                            opEntity.setVisibility(op.getVisibility().name());
+                            opEntity.setOrderIndex(op.getOrderIndex());
+                            
+                            java.util.Set<com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity> paramEntities = new java.util.LinkedHashSet<>();
+                            int paramIndex = 0;
+                            for (com.umlcase.domain.model.UmlParameter domainParam : op.getParameters()) {
+                                com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity paramEntity = new com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity();
+                                paramEntity.setId(domainParam.getId());
+                                paramEntity.setName(domainParam.getName());
+                                paramEntity.setType(domainParam.getType());
+                                paramEntity.setOrderIndex(paramIndex++);
+                                paramEntities.add(paramEntity);
+                            }
+                            opEntity.setParameters(paramEntities);
+                            return opEntity;
+                        }).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
                         entity.addClass(newChild);
                     }
                 }
@@ -155,6 +241,31 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                                     attrEntity.getOrderIndex()
                             )));
                 }
+                
+                if (classEntity.getOperations() != null) {
+                    classEntity.getOperations().stream()
+                            .sorted(java.util.Comparator.comparingInt(com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity::getOrderIndex))
+                            .forEach(opEntity -> {
+                                com.umlcase.domain.model.UmlOperation domainOp = new com.umlcase.domain.model.UmlOperation(
+                                        opEntity.getId(),
+                                        opEntity.getName(),
+                                        opEntity.getReturnType(),
+                                        com.umlcase.domain.model.Visibility.valueOf(opEntity.getVisibility()),
+                                        opEntity.getOrderIndex()
+                                );
+                                if (opEntity.getParameters() != null) {
+                                    opEntity.getParameters().stream()
+                                            .sorted(java.util.Comparator.comparingInt(com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity::getOrderIndex))
+                                            .forEach(paramEntity -> domainOp.addParameter(new com.umlcase.domain.model.UmlParameter(
+                                                    paramEntity.getId(),
+                                                    paramEntity.getName(),
+                                                    paramEntity.getType(),
+                                                    paramEntity.getOrderIndex()
+                                            )));
+                                }
+                                umlClass.addOperation(domainOp);
+                            });
+                }
                 model.addClass(umlClass);
             }
         }
@@ -179,7 +290,30 @@ public class JpaUmlModelRepositoryAdapter implements UmlModelRepository {
                 attrEntity.setVisibility(a.getVisibility().name());
                 attrEntity.setOrderIndex(a.getOrderIndex());
                 return attrEntity;
-            }).collect(java.util.stream.Collectors.toList()));
+            }).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
+            
+            classEntity.setOperations(c.getOperations().stream().map(op -> {
+                com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity opEntity = new com.umlcase.infrastructure.persistence.entity.JpaUmlOperationEntity();
+                opEntity.setId(op.getId());
+                opEntity.setName(op.getName());
+                opEntity.setReturnType(op.getReturnType());
+                opEntity.setVisibility(op.getVisibility().name());
+                opEntity.setOrderIndex(op.getOrderIndex());
+                
+                java.util.Set<com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity> paramEntities = new java.util.LinkedHashSet<>();
+                int paramIndex = 0;
+                for (com.umlcase.domain.model.UmlParameter domainParam : op.getParameters()) {
+                    com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity paramEntity = new com.umlcase.infrastructure.persistence.entity.JpaUmlParameterEntity();
+                    paramEntity.setId(domainParam.getId());
+                    paramEntity.setName(domainParam.getName());
+                    paramEntity.setType(domainParam.getType());
+                    paramEntity.setOrderIndex(paramIndex++);
+                    paramEntities.add(paramEntity);
+                }
+                opEntity.setParameters(paramEntities);
+                return opEntity;
+            }).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
+            
             return classEntity;
         }).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
 

@@ -44,4 +44,10 @@ public class StompUmlEventListener {
         String destination = "/topic/projects/" + event.projectId();
         messagingTemplate.convertAndSend(destination, event);
     }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleOperationAddedEvent(com.umlcase.application.event.OperationAddedEvent event) {
+        String destination = "/topic/projects/" + event.projectId();
+        messagingTemplate.convertAndSend(destination, event);
+    }
 }

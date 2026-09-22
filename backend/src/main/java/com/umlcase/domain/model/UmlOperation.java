@@ -50,6 +50,12 @@ public final class UmlOperation {
 
     public void addParameter(UmlParameter param) {
         Objects.requireNonNull(param);
+        boolean duplicate = parameters.stream()
+                .anyMatch(p -> p.getName().equalsIgnoreCase(param.getName()));
+        if (duplicate) {
+            throw new IllegalArgumentException("Ya existe un parámetro con nombre '" + param.getName() + "'");
+        }
+        param.setOrderIndex(parameters.size());
         parameters.add(param);
     }
 

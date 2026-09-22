@@ -6,5 +6,6 @@ import java.util.UUID;
 public record UmlClassDto(
     UUID id,
     String name,
-    List<UmlAttributeDto> attributes
+    List<UmlAttributeDto> attributes,
+    List<UmlOperationDto> operations
 ) {}

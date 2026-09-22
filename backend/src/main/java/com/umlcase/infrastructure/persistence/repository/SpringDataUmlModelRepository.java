@@ -13,13 +13,13 @@ import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface SpringDataUmlModelRepository extends JpaRepository<JpaUmlModelEntity, UUID> {
-    @EntityGraph(attributePaths = {"classes", "classes.attributes"})
+    @EntityGraph(attributePaths = {"classes", "classes.attributes", "classes.operations", "classes.operations.parameters"})
     Optional<JpaUmlModelEntity> findByProjectId(UUID projectId);
 
-    @EntityGraph(attributePaths = {"classes", "classes.attributes"})
+    @EntityGraph(attributePaths = {"classes", "classes.attributes", "classes.operations", "classes.operations.parameters"})
     Optional<JpaUmlModelEntity> findById(UUID id);
 
-    @EntityGraph(attributePaths = {"classes", "classes.attributes"})
+    @EntityGraph(attributePaths = {"classes", "classes.attributes", "classes.operations", "classes.operations.parameters"})
     @Query("SELECT m FROM JpaUmlModelEntity m WHERE m.projectId = :projectId")
     Optional<JpaUmlModelEntity> lockForMutation(@Param("projectId") UUID projectId);
 }

@@ -99,7 +99,28 @@ public final class UmlClass {
      */
     public void addOperation(UmlOperation operation) {
         Objects.requireNonNull(operation, "operación no puede ser null");
+        boolean duplicate = operations.stream()
+                .anyMatch(o -> hasSameSignature(o, operation));
+        if (duplicate) {
+            throw new IllegalArgumentException("Ya existe una operación con la misma firma");
+        }
+        operation.setOrderIndex(operations.size());
         operations.add(operation);
+    }
+
+    private boolean hasSameSignature(UmlOperation op1, UmlOperation op2) {
+        if (!op1.getName().equalsIgnoreCase(op2.getName())) {
+            return false;
+        }
+        if (op1.getParameters().size() != op2.getParameters().size()) {
+            return false;
+        }
+        for (int i = 0; i < op1.getParameters().size(); i++) {
+            if (!op1.getParameters().get(i).getType().equalsIgnoreCase(op2.getParameters().get(i).getType())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** Elimina un atributo por id. */

@@ -8,6 +8,7 @@ export interface UmlClassDto {
   id: string;
   name: string;
   attributes?: any[]; // or define UmlAttributeDto if needed
+  operations?: any[];
 }
 
 export interface UmlModelResponse {
@@ -67,6 +68,36 @@ export interface AddAttributeResponse {
     visibility: string;
     orderIndex: number;
   };
+  modelVersion: number;
+}
+
+export interface AddOperationRequest {
+  commandId: string;
+  participantId: string;
+  expectedVersion: number;
+  name: string;
+  returnType: string;
+  visibility: string;
+  parameters: {
+    name: string;
+    type: string;
+  }[];
+}
+
+export interface AddOperationResponse {
+  commandId: string;
+  classId: string;
+  operationId: string;
+  name: string;
+  returnType: string;
+  visibility: string;
+  orderIndex: number;
+  parameters: {
+    id: string;
+    name: string;
+    type: string;
+    orderIndex: number;
+  }[];
   modelVersion: number;
 }
 
@@ -133,6 +164,17 @@ export class UmlService {
     return this.http.delete<RemoveAttributeResponse>(
       `${API}/projects/${projectId}/classes/${classId}/attributes/${attributeId}`,
       { body: request }
+    );
+  }
+
+  addOperation(
+    projectId: string,
+    classId: string,
+    request: AddOperationRequest
+  ): Observable<AddOperationResponse> {
+    return this.http.post<AddOperationResponse>(
+      `${API}/projects/${projectId}/classes/${classId}/operations`,
+      request
     );
   }
 }

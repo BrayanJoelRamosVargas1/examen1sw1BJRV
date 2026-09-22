@@ -137,15 +137,18 @@ h2 {
   list-style: none;
 }
 
-.class-item {
-  padding: 0.4rem 0;
-  border-bottom: 1px solid #1e1e3e;
+.class-card {
+  background: #1a1a3e;
+  border: 1px solid #3a3a6e;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.4rem;
 }
 
-.class-item:last-child { border-bottom: none; }
+.class-card:last-child { margin-bottom: 0; }
 
 .class-name {
   color: #7ec8e3;
@@ -172,14 +175,46 @@ h2 {
   font-size: 0.85rem;
 }
 
-.class-header {
+.class-card-header {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.class-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.25rem;
+}
+
+.class-section {
+  border-top: 1px solid #2e2e5e;
+  padding-top: 0.4rem;
+  margin-top: 0.1rem;
+}
+
+.section-header {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #7070a0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+  display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.rename-btn, .add-attr-btn {
+.empty-section {
+  font-size: 0.75rem;
+  color: #444;
+  font-style: italic;
+  padding-left: 0.5rem;
+}
+
+.rename-btn, .add-attr-btn, .add-op-btn, .edit-attr-btn {
   font-size: 0.7rem;
   padding: 0.1rem 0.3rem;
   background: #333;
@@ -189,8 +224,15 @@ h2 {
   border-radius: 3px;
 }
 
+.add-op-btn {
+  background: #1a2a1a;
+  color: #6fcf6f;
+  border-color: #4a7a4a;
+}
+
 .rename-btn:hover, .add-attr-btn:hover { background: #444; }
-.rename-btn:disabled, .add-attr-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.add-op-btn:hover:not(:disabled) { background: #263a26; }
+.rename-btn:disabled, .add-attr-btn:disabled, .add-op-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .attribute-list {
   list-style-type: none;
@@ -211,4 +253,6 @@ h2 {
 .attr-visibility { color: #c678dd; margin-right: 0.3rem; font-size: 0.75rem; }
 .attr-type { color: #56b6c2; margin-right: 0.3rem; font-size: 0.75rem; }
 .attr-name { color: #e5c07b; }
+.op-visibility { color: #6fcf6f; font-weight: bold; margin-right: 0.2rem; font-size: 0.9rem; }
+.op-return { color: #56b6c2; font-size: 0.75rem; margin-left: 0.2rem; }
 

@@ -24,18 +24,20 @@ public class UmlProjectController {
     private final com.umlcase.application.handler.AddAttributeHandler addAttributeHandler;
     private final com.umlcase.application.handler.UpdateAttributeHandler updateAttributeHandler;
     private final com.umlcase.application.handler.RemoveAttributeHandler removeAttributeHandler;
-
+    private final com.umlcase.application.handler.AddOperationHandler addOperationHandler;
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
                                 com.umlcase.application.handler.AddAttributeHandler addAttributeHandler,
                                 com.umlcase.application.handler.UpdateAttributeHandler updateAttributeHandler,
-                                com.umlcase.application.handler.RemoveAttributeHandler removeAttributeHandler) {
+                                com.umlcase.application.handler.RemoveAttributeHandler removeAttributeHandler,
+                                com.umlcase.application.handler.AddOperationHandler addOperationHandler) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
         this.updateAttributeHandler = updateAttributeHandler;
         this.removeAttributeHandler = removeAttributeHandler;
+        this.addOperationHandler = addOperationHandler;
     }
 
     @GetMapping("/model")
@@ -49,7 +51,19 @@ public class UmlProjectController {
                             .map(a -> new com.umlcase.infrastructure.web.dto.UmlAttributeDto(
                                     a.getId(), a.getName(), a.getType(), a.getVisibility().name(), a.getOrderIndex()
                             )).collect(Collectors.toList());
-                    return new UmlClassDto(c.getId(), c.getName(), attrs);
+                    
+                    List<com.umlcase.infrastructure.web.dto.UmlOperationDto> ops = c.getOperations().stream()
+                            .map(op -> {
+                                List<com.umlcase.infrastructure.web.dto.UmlParameterDto> params = op.getParameters().stream()
+                                        .map(p -> new com.umlcase.infrastructure.web.dto.UmlParameterDto(
+                                                p.getId(), p.getName(), p.getType(), op.getParameters().indexOf(p)
+                                        )).collect(Collectors.toList());
+                                return new com.umlcase.infrastructure.web.dto.UmlOperationDto(
+                                        op.getId(), op.getName(), op.getReturnType(), op.getVisibility().name(), op.getOrderIndex(), params
+                                );
+                            }).collect(Collectors.toList());
+                            
+                    return new UmlClassDto(c.getId(), c.getName(), attrs, ops);
                 })
                 .collect(Collectors.toList());
 
@@ -133,5 +147,52 @@ public class UmlProjectController {
                 attributeId
         );
         return ResponseEntity.ok(removeAttributeHandler.handle(command));
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/classes/{classId}/operations")
+    public ResponseEntity<com.umlcase.infrastructure.web.dto.AddOperationResponse> addOperation(
+            @PathVariable UUID projectId,
+            @PathVariable UUID classId,
+            @org.springframework.web.bind.annotation.RequestBody com.umlcase.infrastructure.web.dto.AddOperationRequest request) {
+        
+        var command = com.umlcase.application.command.AddOperationCommand.builder()
+                .commandId(request.getCommandId() != null ? request.getCommandId() : UUID.randomUUID())
+                .projectId(projectId)
+                .participantId(request.getParticipantId())
+                .expectedVersion(request.getExpectedVersion())
+                .classId(classId)
+                .name(request.getName())
+                .returnType(request.getReturnType())
+                .visibility(request.getVisibility())
+                .parameters(request.getParameters() != null ? request.getParameters().stream().map(p -> 
+                        com.umlcase.application.command.AddOperationCommand.ParameterData.builder()
+                        .name(p.getName())
+                        .type(p.getType())
+                        .build()
+                ).collect(Collectors.toList()) : null)
+                .build();
+
+        var result = addOperationHandler.handle(command);
+        
+        var response = com.umlcase.infrastructure.web.dto.AddOperationResponse.builder()
+                .commandId(command.getCommandId())
+                .classId(classId)
+                .operationId(result.operation().getId())
+                .name(result.operation().getName())
+                .returnType(result.operation().getReturnType())
+                .visibility(result.operation().getVisibility())
+                .orderIndex(result.operation().getOrderIndex())
+                .parameters(result.operation().getParameters().stream().map(p -> 
+                        com.umlcase.infrastructure.web.dto.AddOperationResponse.ParameterResponseDto.builder()
+                        .id(p.getId())
+                        .name(p.getName())
+                        .type(p.getType())
+                        .orderIndex(result.operation().getParameters().indexOf(p))
+                        .build()
+                ).collect(Collectors.toList()))
+                .modelVersion(result.newModelVersion())
+                .build();
+                
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(response);
     }
 }
