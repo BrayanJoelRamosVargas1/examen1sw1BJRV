@@ -17,6 +17,19 @@ export interface UmlModelResponse {
   classes: UmlClassDto[];
 }
 
+export interface RemoveOperationRequest {
+  commandId: string;
+  participantId: string;
+  expectedVersion: number;
+}
+
+export interface RemoveOperationResponse {
+  commandId: string;
+  classId: string;
+  operationId: string;
+  modelVersion: number;
+}
+
 export interface CreateClassRequest {
   commandId: string;
   participantId: string;
@@ -219,5 +232,16 @@ export class UmlService {
       `${API}/projects/${projectId}/classes/${classId}/operations/${operationId}`,
       request
     );
+  }
+
+  deleteOperation(
+    projectId: string,
+    classId: string,
+    operationId: string,
+    request: RemoveOperationRequest
+  ): Observable<RemoveOperationResponse> {
+    return this.http.request<RemoveOperationResponse>('delete', `${API}/projects/${projectId}/classes/${classId}/operations/${operationId}`, {
+      body: request
+    });
   }
 }

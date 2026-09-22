@@ -94,7 +94,16 @@ export interface OperationUpdatedEvent {
   modelVersion: number;
 }
 
-export type UmlEvent = ClassCreatedEvent | ClassRenamedEvent | AttributeAddedEvent | AttributeUpdatedEvent | AttributeRemovedEvent | OperationAddedEvent | OperationUpdatedEvent;
+export interface OperationRemovedEvent {
+  eventType: 'OPERATION_REMOVED';
+  commandId: string;
+  projectId: string;
+  classId: string;
+  operationId: string;
+  modelVersion: number;
+}
+
+export type UmlEvent = ClassCreatedEvent | ClassRenamedEvent | AttributeAddedEvent | AttributeUpdatedEvent | AttributeRemovedEvent | OperationAddedEvent | OperationUpdatedEvent | OperationRemovedEvent;
 
 export type WsStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 

@@ -26,6 +26,7 @@ public class UmlProjectController {
     private final com.umlcase.application.handler.RemoveAttributeHandler removeAttributeHandler;
     private final com.umlcase.application.handler.AddOperationHandler addOperationHandler;
     private final com.umlcase.application.handler.UpdateOperationHandler updateOperationHandler;
+    private final com.umlcase.application.handler.RemoveOperationHandler removeOperationHandler;
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
@@ -33,7 +34,8 @@ public class UmlProjectController {
                                 com.umlcase.application.handler.UpdateAttributeHandler updateAttributeHandler,
                                 com.umlcase.application.handler.RemoveAttributeHandler removeAttributeHandler,
                                 com.umlcase.application.handler.AddOperationHandler addOperationHandler,
-                                com.umlcase.application.handler.UpdateOperationHandler updateOperationHandler) {
+                                com.umlcase.application.handler.UpdateOperationHandler updateOperationHandler,
+                                com.umlcase.application.handler.RemoveOperationHandler removeOperationHandler) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
@@ -41,6 +43,7 @@ public class UmlProjectController {
         this.removeAttributeHandler = removeAttributeHandler;
         this.addOperationHandler = addOperationHandler;
         this.updateOperationHandler = updateOperationHandler;
+        this.removeOperationHandler = removeOperationHandler;
     }
 
     @GetMapping("/model")
@@ -238,6 +241,34 @@ public class UmlProjectController {
                 event.parameters().stream().map(p ->
                         new com.umlcase.infrastructure.web.dto.UmlParameterDto(p.id(), p.name(), p.type(), p.orderIndex())
                 ).collect(Collectors.toList()),
+                event.modelVersion()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/classes/{classId}/operations/{operationId}")
+    public ResponseEntity<com.umlcase.infrastructure.web.dto.RemoveOperationResponse> removeOperation(
+            @PathVariable UUID projectId,
+            @PathVariable UUID classId,
+            @PathVariable UUID operationId,
+            @org.springframework.web.bind.annotation.RequestBody com.umlcase.infrastructure.web.dto.RemoveOperationRequest request) {
+
+        com.umlcase.application.command.RemoveOperationCommand command = new com.umlcase.application.command.RemoveOperationCommand(
+                request.commandId(),
+                request.participantId(),
+                projectId,
+                classId,
+                operationId,
+                request.expectedVersion()
+        );
+
+        com.umlcase.application.event.OperationRemovedEvent event = removeOperationHandler.handle(command);
+
+        com.umlcase.infrastructure.web.dto.RemoveOperationResponse response = new com.umlcase.infrastructure.web.dto.RemoveOperationResponse(
+                event.commandId(),
+                event.classId(),
+                event.operationId(),
                 event.modelVersion()
         );
 

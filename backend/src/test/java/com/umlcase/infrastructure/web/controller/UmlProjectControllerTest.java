@@ -61,6 +61,9 @@ class UmlProjectControllerTest {
     @MockBean
     private com.umlcase.application.handler.UpdateOperationHandler updateOperationHandler;
 
+    @MockBean
+    private com.umlcase.application.handler.RemoveOperationHandler removeOperationHandler;
+
     // ─── Test del comportamiento correcto ─────────────────────────────────────
 
     @Test

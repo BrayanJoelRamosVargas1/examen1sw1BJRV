@@ -10,4 +10,5 @@ public interface UmlEventPublisher {
     void publish(com.umlcase.application.event.AttributeRemovedEvent event);
     void publish(com.umlcase.application.event.OperationAddedEvent event);
     void publish(com.umlcase.application.event.OperationUpdatedEvent event);
+    void publish(com.umlcase.application.event.OperationRemovedEvent event);
 }

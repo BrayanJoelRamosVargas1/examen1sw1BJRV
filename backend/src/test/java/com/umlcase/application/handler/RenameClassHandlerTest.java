@@ -326,6 +326,11 @@ class RenameClassHandlerTest {
             // Ignorado
         }
 
+        @Override
+        public void publish(com.umlcase.application.event.OperationRemovedEvent event) {
+            // Ignorado
+        }
+
         List<ClassRenamedEvent> renamedEvents() { return renamed; }
     }
 }

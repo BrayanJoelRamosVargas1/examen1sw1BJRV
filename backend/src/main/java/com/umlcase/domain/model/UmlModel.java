@@ -203,4 +203,10 @@ public final class UmlModel {
                + ", classes=" + classes.size()
                + ", relationships=" + relationships.size() + "}";
     }
+
+    public void removeOperation(UUID classId, UUID operationId) {
+        UmlClass cls = findClassById(classId)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontro la clase con id " + classId));
+        cls.removeOperation(operationId);
+    }
 }

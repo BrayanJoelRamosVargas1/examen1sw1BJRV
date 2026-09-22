@@ -150,3 +150,13 @@ Esta matriz garantiza la regla del docente:
 | F2.3.2-04 | Fix markModified monotónico forzado para @Version | [FASE 2.3.2] | UpdateOperationTransactionalIT | [OK] |
 | F2.3.2-05 | Fix Caché GET /model en navegadores
 o-cache | [FASE 2.3.2] | Demo F5 A/B | [OK] |
+---
+
+## Componentes de Fase 2.3.3 (Remove Operation)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F2.3.3-01 | DELETE /api/projects/{projectId}/classes/{classId}/operations/{operationId} | [FASE 2.3.3] | RemoveOperationApiIT | [OK] |
+| F2.3.3-02 | OperationRemovedEvent + STOMP broadcast | [FASE 2.3.3] | RemoveOperationStompIT | [OK] |
+| F2.3.3-03 | Frontend tipado de eventos sin casts unsafe | [FASE 2.3.3] | Angular build | [OK] |
+| F2.3.3-04 | Optimistic Locking @Version N+1 y orphan removal en cascade | [FASE 2.3.3] | RemoveOperationTransactionalIT | [OK] |

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { UmlService, UmlClassDto } from './services/uml.service';
-import { UmlWebSocketService, ClassCreatedEvent, ClassRenamedEvent, UmlEvent, WsStatus, AttributeUpdatedEvent, OperationAddedEvent } from './services/uml-websocket.service';
+import { UmlWebSocketService, ClassCreatedEvent, ClassRenamedEvent, UmlEvent, WsStatus, AttributeUpdatedEvent, OperationAddedEvent, OperationRemovedEvent } from './services/uml-websocket.service';
 import { v4 as uuidv4 } from 'uuid';
 
 // UUID del proyecto temporal de desarrollo (Fase 1)
@@ -167,6 +167,18 @@ export class AppComponent implements OnInit, OnDestroy {
       this.upsertClass(targetClass);
       this.currentVersion = event.modelVersion;
       this.eventLog.unshift(`ATTRIBUTE_REMOVED "${event.attributeId}" v${event.modelVersion}`);
+    } else if ('eventType' in event && event.eventType === 'OPERATION_REMOVED') {
+      const e = event as OperationRemovedEvent;
+      const targetClass = this.classes.find(c => c.id === e.classId);
+      if (targetClass && targetClass.operations) {
+        const initialLength = targetClass.operations.length;
+        targetClass.operations = targetClass.operations.filter(o => o.id !== e.operationId);
+        if (targetClass.operations.length < initialLength) {
+          this.eventLog.unshift(`OPERATION_REMOVED "${e.operationId}" v${e.modelVersion}`);
+          this.upsertClass(targetClass);
+          this.currentVersion = e.modelVersion;
+        }
+      }
     } else if (('eventType' in event && event.eventType === 'ATTRIBUTE_UPDATED') || ('eventType' in event === false && 'attributeId' in event && !this.isNewAttribute(event.classId, (event as any).attributeId))) {
       // Es AttributeUpdatedEvent
       const targetClass = this.classes.find(c => c.id === event.classId);
@@ -660,5 +672,29 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.wsSub?.unsubscribe();
     this.wsService.disconnect();
+  }
+
+  removeOperation(cls: any, op: any) {
+    if (confirm(`¿Eliminar operación "${op.name}"?`)) {
+      this.umlService.deleteOperation(this.projectId, cls.id, op.id, {
+        commandId: crypto.randomUUID(),
+        participantId: 'browser-A',
+        expectedVersion: this.currentVersion
+      }).subscribe({
+        next: (response) => {
+          this.currentVersion = response.modelVersion;
+          cls.operations = cls.operations.filter((o: any) => o.id !== op.id);
+          this.upsertClass(cls);
+        },
+        error: (err) => {
+          if (err.status === 409) {
+            this.errorMessage = 'Conflicto de versión detectado. Resincronizando estado automáticamente...';
+            this.loadModel();
+          } else {
+            this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+          }
+        }
+      });
+    }
   }
 }

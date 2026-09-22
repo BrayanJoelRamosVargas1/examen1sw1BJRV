@@ -48,4 +48,9 @@ public class SpringUmlEventPublisher implements UmlEventPublisher {
     public void publish(com.umlcase.application.event.OperationUpdatedEvent event) {
         applicationEventPublisher.publishEvent(event);
     }
+
+    @Override
+    public void publish(com.umlcase.application.event.OperationRemovedEvent event) {
+        applicationEventPublisher.publishEvent(event);
+    }
 }
