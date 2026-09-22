@@ -170,7 +170,10 @@ public final class UmlModel {
 
     /** Elimina una relación por id. */
     public void removeRelationship(UUID relationshipId) {
-        relationships.removeIf(r -> r.getId().equals(relationshipId));
+        boolean removed = relationships.removeIf(r -> r.getId().equals(relationshipId));
+        if (!removed) {
+            throw new IllegalArgumentException("No se encontró la relación con id " + relationshipId);
+        }
     }
 
     /** Busca una clase por id. */

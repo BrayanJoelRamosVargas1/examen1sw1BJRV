@@ -29,6 +29,7 @@ public class UmlProjectController {
     private final com.umlcase.application.handler.RemoveOperationHandler removeOperationHandler;
     private final com.umlcase.application.port.in.AddRelationshipUseCase addRelationshipUseCase;
     private final com.umlcase.application.port.in.UpdateRelationshipUseCase updateRelationshipUseCase;
+    private final com.umlcase.application.port.in.RemoveRelationshipUseCase removeRelationshipUseCase;
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
@@ -39,7 +40,8 @@ public class UmlProjectController {
                                 com.umlcase.application.handler.UpdateOperationHandler updateOperationHandler,
                                 com.umlcase.application.handler.RemoveOperationHandler removeOperationHandler,
                                 com.umlcase.application.port.in.AddRelationshipUseCase addRelationshipUseCase,
-                                com.umlcase.application.port.in.UpdateRelationshipUseCase updateRelationshipUseCase) {
+                                com.umlcase.application.port.in.UpdateRelationshipUseCase updateRelationshipUseCase,
+                                com.umlcase.application.port.in.RemoveRelationshipUseCase removeRelationshipUseCase) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
@@ -50,6 +52,7 @@ public class UmlProjectController {
         this.removeOperationHandler = removeOperationHandler;
         this.addRelationshipUseCase = addRelationshipUseCase;
         this.updateRelationshipUseCase = updateRelationshipUseCase;
+        this.removeRelationshipUseCase = removeRelationshipUseCase;
     }
 
     @GetMapping("/model")
@@ -352,6 +355,31 @@ public class UmlProjectController {
                 event.type(),
                 event.sourceMultiplicity(),
                 event.targetMultiplicity(),
+                event.modelVersion()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/relationships/{relationshipId}")
+    public ResponseEntity<com.umlcase.infrastructure.web.dto.RemoveRelationshipResponse> removeRelationship(
+            @PathVariable UUID projectId,
+            @PathVariable UUID relationshipId,
+            @org.springframework.web.bind.annotation.RequestBody com.umlcase.infrastructure.web.dto.RemoveRelationshipRequest request) {
+
+        var command = new com.umlcase.application.command.UmlCommand.RemoveRelationship(
+                request.commandId() != null ? request.commandId() : UUID.randomUUID(),
+                projectId,
+                request.participantId(),
+                request.expectedVersion(),
+                relationshipId
+        );
+
+        var event = removeRelationshipUseCase.handle(command);
+
+        var response = new com.umlcase.infrastructure.web.dto.RemoveRelationshipResponse(
+                event.commandId(),
+                event.relationshipId(),
                 event.modelVersion()
         );
 

@@ -70,6 +70,8 @@ class UmlProjectControllerTest {
     @MockBean
     private com.umlcase.application.port.in.UpdateRelationshipUseCase updateRelationshipUseCase;
 
+    @MockBean
+    private com.umlcase.application.port.in.RemoveRelationshipUseCase removeRelationshipUseCase;
     // ─── Test del comportamiento correcto ─────────────────────────────────────
 
     @Test

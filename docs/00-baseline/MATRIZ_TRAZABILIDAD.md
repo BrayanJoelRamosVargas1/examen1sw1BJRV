@@ -228,3 +228,14 @@ pm run build | [OK] |
 | F3.2-02 | STOMP broadcast RELATIONSHIP_UPDATED | `[FASE 3.2]` | Demo A/B STOMP real | `[OK]` |
 | F3.2-03 | Inmutabilidad de endpoints/extremos topológicos | `[FASE 3.2]` | `UpdateRelationshipTransactionalIT` | `[OK]` |
 | F3.2-04 | Update muta sólo metadata (tipo y multiplicidades) | `[FASE 3.2]` | `UpdateRelationshipHandlerTest` | `[OK]` |
+
+---
+
+## Componentes de Fase 3.3 (Remove Relationship)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F3.3-01 | DELETE `/api/projects/{projectId}/relationships/{relationshipId}` | `[FASE 3.3]` | `RemoveRelationshipApiIT` | `[OK]` |
+| F3.3-02 | STOMP broadcast RELATIONSHIP_REMOVED | `[FASE 3.3]` | Demo A/B STOMP real | `[OK]` |
+| F3.3-03 | Persistencia borrado + Optimistic Locking delegate | `[FASE 3.3]` | `RemoveRelationshipTransactionalIT` | `[OK]` |
+| F3.3-04 | Fix ModelVersionConflict (delegar @Version a JPA) | `[FASE 3.3]` | `RemoveRelationshipHandlerTest` | `[OK]` |

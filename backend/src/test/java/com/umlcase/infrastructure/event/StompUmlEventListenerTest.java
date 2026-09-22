@@ -65,4 +65,22 @@ class StompUmlEventListenerTest {
         // Assert
         verify(messagingTemplate).convertAndSend("/topic/projects/" + projectId, event);
     }
+
+    @Test
+    void shouldForwardRelationshipRemovedEventToStompTopic() {
+        // Arrange
+        UUID projectId = UUID.randomUUID();
+        com.umlcase.application.event.RelationshipRemovedEvent event = new com.umlcase.application.event.RelationshipRemovedEvent(
+                UUID.randomUUID(),
+                projectId,
+                UUID.randomUUID(),
+                4L
+        );
+
+        // Act
+        listener.handleRelationshipRemovedEvent(event);
+
+        // Assert
+        verify(messagingTemplate).convertAndSend("/topic/projects/" + projectId, event);
+    }
 }

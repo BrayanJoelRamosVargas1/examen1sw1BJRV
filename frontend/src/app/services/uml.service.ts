@@ -190,6 +190,18 @@ export interface UpdateRelationshipResponse {
   modelVersion: number;
 }
 
+export interface RemoveRelationshipRequest {
+  commandId: string;
+  participantId: string;
+  expectedVersion: number;
+}
+
+export interface RemoveRelationshipResponse {
+  commandId: string;
+  relationshipId: string;
+  modelVersion: number;
+}
+
 export interface SaveNodeViewResponse {
   commandId: string;
   classId: string;
@@ -329,6 +341,16 @@ export class UmlService {
       `${API}/projects/${projectId}/relationships/${relationshipId}`,
       request
     );
+  }
+
+  removeRelationship(
+    projectId: string,
+    relationshipId: string,
+    request: RemoveRelationshipRequest
+  ): Observable<RemoveRelationshipResponse> {
+    return this.http.request<RemoveRelationshipResponse>('delete', `${API}/projects/${projectId}/relationships/${relationshipId}`, {
+      body: request
+    });
   }
 
   // DIAGRAM LAYOUT

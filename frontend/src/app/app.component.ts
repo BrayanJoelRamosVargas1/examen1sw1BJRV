@@ -381,6 +381,14 @@ export class AppComponent implements OnInit, OnDestroy {
         this.loadModel();
         return;
       }
+    } else if ('eventType' in event && event.eventType === 'RELATIONSHIP_REMOVED') {
+      const e = event as any;
+      const initialLength = this.relationships.length;
+      this.relationships = this.relationships.filter(r => r.id !== e.relationshipId);
+      if (this.relationships.length < initialLength) {
+        this.eventLog.unshift(`RELATIONSHIP_REMOVED v${e.modelVersion}`);
+        this.currentVersion = e.modelVersion;
+      }
     } else {
       this.loadModel();
       return;
@@ -930,6 +938,39 @@ export class AppComponent implements OnInit, OnDestroy {
           this.loadModel();
         } else {
           this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+        }
+      }
+    });
+  }
+
+  removeRelationship(rel: any): void {
+    if (!confirm('¿Eliminar esta relación?')) return;
+
+    this.errorMessage = '';
+
+    this.umlService.removeRelationship(this.projectId, rel.id, {
+      commandId: uuidv4(),
+      participantId: 'browser-A',
+      expectedVersion: this.currentVersion
+    }).subscribe({
+      next: (response) => {
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) {
+          this.loadModel();
+          return;
+        }
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+        this.relationships = this.relationships.filter(r => r.id !== rel.id);
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.errorMessage = 'Conflicto de versión detectado. Resincronizando estado automáticamente...';
+          this.loadModel();
+        } else {
+          this.errorMessage = 'Error eliminando relación: ' + (err.error?.error || err.message);
         }
       }
     });
