@@ -115,3 +115,13 @@ Esta matriz garantiza la regla del docente:
 | F2.2.2-03 | Deduplicación STOMP para el autor del HTTP 200 | `[FASE 2.2.2]` | Demo A/B | `[OK]` |
 | F2.2.2-04 | Separación lógica Frontend Add vs Update | `[FASE 2.2.2]` | Demo A/B | `[OK]` |
 | F2.2.2-05 | 409 Conflict Optimistic Locking | `[FASE 2.2.2]` | `UpdateAttributeApiIT` | `[OK]` |
+
+---
+
+## Componentes de Fase 2.2.3 (Remove Attribute)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F2.2.3-01 | DELETE `/api/projects/{projectId}/classes/{classId}/attributes/{attributeId}` | `[FASE 2.2.3]` | `RemoveAttributeApiIT` | `[OK]` |
+| F2.2.3-02 | STOMP broadcast ATTRIBUTE_REMOVED | `[FASE 2.2.3]` | Demo A/B | `[OK]` |
+| F2.2.3-03 | Estabilización Race Condition STOMP/HTTP/GET | `[FASE 2.2.3]` | Demo A/B y F5 | `[OK]` |

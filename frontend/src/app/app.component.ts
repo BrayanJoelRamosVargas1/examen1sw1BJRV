@@ -29,6 +29,7 @@ export class AppComponent implements OnInit, OnDestroy {
   // Buffer de eventos que llegan antes de que el GET snapshot termine
   private eventBuffer: UmlEvent[] = [];
   private snapshotLoaded = false;
+  private snapshotRequestId = 0;
   private wsSub?: Subscription;
 
   constructor(
@@ -63,8 +64,11 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private loadModel(): void {
+    const requestId = ++this.snapshotRequestId;
+    this.snapshotLoaded = false;
     this.umlService.getModel(this.projectId).subscribe({
       next: (model) => {
+        if (requestId !== this.snapshotRequestId) return;
         // Renderizar snapshot
         this.currentVersion = model.version;
         this.classes = [...model.classes];
@@ -72,12 +76,18 @@ export class AppComponent implements OnInit, OnDestroy {
 
         // Paso 3: aplicar eventos bufferizados usando la misma regla estricta de secuencia
         // (pueden haber llegado por WS mientras el GET estaba en vuelo)
-        for (const bufferedEvent of this.eventBuffer) {
-          this.applyEvent(bufferedEvent);
-        }
+        const bufferedEvents = this.eventBuffer;
         this.eventBuffer = [];
+        for (const bufferedEvent of bufferedEvents) {
+          if (this.snapshotLoaded) {
+            this.applyEvent(bufferedEvent);
+          } else {
+            this.eventBuffer.push(bufferedEvent);
+          }
+        }
       },
       error: (err) => {
+        if (requestId !== this.snapshotRequestId) return;
         this.errorMessage = 'Error cargando el modelo: ' + err.message;
         this.snapshotLoaded = true;
         this.eventBuffer = [];
@@ -147,6 +157,16 @@ export class AppComponent implements OnInit, OnDestroy {
       this.upsertClass({ id: event.classId, name: event.newName, attributes: targetClass ? targetClass.attributes : [] });
       this.currentVersion = event.modelVersion;
       this.eventLog.unshift(`CLASS_RENAMED "${event.newName}" v${event.modelVersion}`);
+    } else if ('eventType' in event && event.eventType === 'ATTRIBUTE_REMOVED') {
+      const targetClass = this.classes.find(c => c.id === event.classId);
+      if (!targetClass || !targetClass.attributes?.some(a => a.id === event.attributeId)) {
+        this.loadModel();
+        return;
+      }
+      targetClass.attributes = targetClass.attributes.filter(a => a.id !== event.attributeId);
+      this.upsertClass(targetClass);
+      this.currentVersion = event.modelVersion;
+      this.eventLog.unshift(`ATTRIBUTE_REMOVED "${event.attributeId}" v${event.modelVersion}`);
     } else if (('eventType' in event && event.eventType === 'ATTRIBUTE_UPDATED') || ('eventType' in event === false && 'attributeId' in event && !this.isNewAttribute(event.classId, (event as any).attributeId))) {
       // Es AttributeUpdatedEvent
       const targetClass = this.classes.find(c => c.id === event.classId);
@@ -172,7 +192,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.loadModel();
         return;
       }
-    } else if (('eventType' in event && event.eventType === 'ATTRIBUTE_ADDED') || ('attributeId' in event)) {
+    } else if ('attributeId' in event && 'name' in event) {
       // Es AttributeAddedEvent
       const targetClass = this.classes.find(c => c.id === event.classId);
       if (targetClass) {
@@ -191,11 +211,14 @@ export class AppComponent implements OnInit, OnDestroy {
         this.loadModel();
         return;
       }
-    } else {
+    } else if ('className' in event) {
       // Es ClassCreatedEvent
       this.upsertClass({ id: event.classId, name: event.className, attributes: [] });
       this.currentVersion = event.modelVersion;
       this.eventLog.unshift(`CLASS_CREATED "${event.className}" v${event.modelVersion}`);
+    } else {
+      this.loadModel();
+      return;
     }
 
     // Mantener log acotado
@@ -252,18 +275,27 @@ export class AppComponent implements OnInit, OnDestroy {
       visibility: 'PRIVATE'
     }).subscribe({
       next: (response) => {
-        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
-        // The API returns the added attribute, but we rely on WebSocket or full reload if needed.
-        // Actually, we can update local state directly or just let WS handle it.
-        // But for ClassCreated we did local update. 
-        // For attribute we just append it if not already there, but wait, `upsertClass` only expects class.
-        // Let's just reload the model or append locally.
-        const clsToUpdate = this.classes.find(c => c.id === cls.id);
-        if (clsToUpdate) {
-            clsToUpdate.attributes = clsToUpdate.attributes || [];
-            clsToUpdate.attributes.push(response.attribute);
-            this.upsertClass(clsToUpdate);
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
         }
+        if (response.modelVersion < this.currentVersion) {
+          if (!this.classes.find(c => c.id === cls.id)?.attributes?.some(a => a.id === response.attribute.id)) {
+            this.loadModel();
+          }
+          return;
+        }
+        const clsToUpdate = this.classes.find(c => c.id === cls.id);
+        if (!clsToUpdate) {
+          this.loadModel();
+          return;
+        }
+        clsToUpdate.attributes = clsToUpdate.attributes || [];
+        if (!clsToUpdate.attributes.some(a => a.id === response.attribute.id)) {
+            clsToUpdate.attributes.push(response.attribute);
+        }
+        this.upsertClass(clsToUpdate);
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
       },
       error: (err) => {
         if (err.status === 409) {
@@ -307,6 +339,14 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.umlService.updateAttribute(this.projectId, cls.id, attr.id, request).subscribe({
       next: (response) => {
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) {
+          this.loadModel();
+          return;
+        }
         this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
         const targetClass = this.classes.find(c => c.id === cls.id);
         if (targetClass) {
@@ -326,6 +366,45 @@ export class AppComponent implements OnInit, OnDestroy {
           this.errorMessage = 'Proyecto, Clase o Atributo no encontrado';
         } else {
           this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+        }
+      }
+    });
+  }
+
+  removeAttribute(cls: UmlClassDto, attr: any): void {
+    if (!confirm(`¿Eliminar el atributo ${attr.name} de ${cls.name}?`)) return;
+    this.errorMessage = '';
+
+    this.umlService.removeAttribute(this.projectId, cls.id, attr.id, {
+      commandId: uuidv4(),
+      participantId: 'browser-A',
+      expectedVersion: this.currentVersion
+    }).subscribe({
+      next: (response) => {
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) {
+          this.loadModel();
+          return;
+        }
+        const alreadyApplied = this.currentVersion >= response.modelVersion;
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+        const targetClass = this.classes.find(c => c.id === response.classId);
+        if (!targetClass || !targetClass.attributes?.some(a => a.id === response.attributeId)) {
+          if (!alreadyApplied) this.loadModel();
+          return;
+        }
+        targetClass.attributes = targetClass.attributes.filter(a => a.id !== response.attributeId);
+        this.upsertClass(targetClass);
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.errorMessage = 'Conflicto de versión detectado. Resincronizando estado automáticamente...';
+          this.loadModel();
+        } else {
+          this.errorMessage = 'Error eliminando atributo: ' + (err.error?.error || err.message);
         }
       }
     });

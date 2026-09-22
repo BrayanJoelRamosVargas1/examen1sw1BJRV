@@ -23,16 +23,19 @@ public class UmlProjectController {
     private final com.umlcase.application.handler.RenameClassHandler renameClassHandler;
     private final com.umlcase.application.handler.AddAttributeHandler addAttributeHandler;
     private final com.umlcase.application.handler.UpdateAttributeHandler updateAttributeHandler;
+    private final com.umlcase.application.handler.RemoveAttributeHandler removeAttributeHandler;
 
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
                                 com.umlcase.application.handler.AddAttributeHandler addAttributeHandler,
-                                com.umlcase.application.handler.UpdateAttributeHandler updateAttributeHandler) {
+                                com.umlcase.application.handler.UpdateAttributeHandler updateAttributeHandler,
+                                com.umlcase.application.handler.RemoveAttributeHandler removeAttributeHandler) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
         this.updateAttributeHandler = updateAttributeHandler;
+        this.removeAttributeHandler = removeAttributeHandler;
     }
 
     @GetMapping("/model")
@@ -113,5 +116,22 @@ public class UmlProjectController {
 
         var response = updateAttributeHandler.handle(command);
         return ResponseEntity.ok(response);
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/classes/{classId}/attributes/{attributeId}")
+    public ResponseEntity<com.umlcase.infrastructure.web.dto.RemoveAttributeResponse> removeAttribute(
+            @PathVariable UUID projectId,
+            @PathVariable UUID classId,
+            @PathVariable UUID attributeId,
+            @org.springframework.web.bind.annotation.RequestBody com.umlcase.infrastructure.web.dto.RemoveAttributeRequest request) {
+        var command = new com.umlcase.application.command.UmlCommand.RemoveAttribute(
+                request.commandId() != null ? request.commandId() : UUID.randomUUID(),
+                projectId,
+                request.participantId(),
+                request.expectedVersion(),
+                classId,
+                attributeId
+        );
+        return ResponseEntity.ok(removeAttributeHandler.handle(command));
     }
 }

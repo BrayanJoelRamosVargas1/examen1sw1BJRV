@@ -6,5 +6,5 @@ public record AddAttributeResponse(
     String commandId,
     UUID classId,
     UmlAttributeDto attribute,
-    long version
+    long modelVersion
 ) {}

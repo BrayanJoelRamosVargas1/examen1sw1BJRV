@@ -76,6 +76,7 @@ public class AddAttributeApiIT {
         assertThat(body.attribute().type()).isEqualTo("int");
         assertThat(body.attribute().visibility()).isEqualTo("PRIVATE");
         assertThat(body.attribute().orderIndex()).isEqualTo(0);
+        assertThat(body.modelVersion()).isEqualTo(initialVersion + 1);
         
         // Assert Persistencia (concurrencia N -> N+1)
         UmlModel storedModel = repository.findByProjectId(projectId).orElseThrow();

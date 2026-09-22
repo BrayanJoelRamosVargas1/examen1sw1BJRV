@@ -127,6 +127,13 @@ public final class UmlModel {
                 .orElseThrow();
     }
 
+    /** Elimina un atributo existente sin modificar el orden de los demás. */
+    public void removeAttribute(UUID classId, UUID attributeId) {
+        UmlClass targetClass = findClassById(classId)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró la clase con id " + classId));
+        targetClass.removeAttribute(attributeId);
+    }
+
     /**
      * Agrega una relación entre dos clases.
      * Valida que las clases referenciadas existan en el modelo.

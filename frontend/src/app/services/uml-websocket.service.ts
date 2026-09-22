@@ -47,7 +47,16 @@ export interface AttributeUpdatedEvent {
   orderIndex: number;
 }
 
-export type UmlEvent = ClassCreatedEvent | ClassRenamedEvent | AttributeAddedEvent | AttributeUpdatedEvent;
+export interface AttributeRemovedEvent {
+  eventType: 'ATTRIBUTE_REMOVED';
+  commandId: string;
+  projectId: string;
+  classId: string;
+  attributeId: string;
+  modelVersion: number;
+}
+
+export type UmlEvent = ClassCreatedEvent | ClassRenamedEvent | AttributeAddedEvent | AttributeUpdatedEvent | AttributeRemovedEvent;
 
 export type WsStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 

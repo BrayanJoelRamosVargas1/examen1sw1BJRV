@@ -52,6 +52,9 @@ class UmlProjectControllerTest {
     @MockBean
     private com.umlcase.application.handler.UpdateAttributeHandler updateAttributeHandler;
 
+    @MockBean
+    private com.umlcase.application.handler.RemoveAttributeHandler removeAttributeHandler;
+
     // ─── Test del comportamiento correcto ─────────────────────────────────────
 
     @Test

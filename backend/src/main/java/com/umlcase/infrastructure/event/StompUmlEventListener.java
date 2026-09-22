@@ -38,4 +38,10 @@ public class StompUmlEventListener {
         String destination = "/topic/projects/" + event.projectId();
         messagingTemplate.convertAndSend(destination, event);
     }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleAttributeRemovedEvent(com.umlcase.application.event.AttributeRemovedEvent event) {
+        String destination = "/topic/projects/" + event.projectId();
+        messagingTemplate.convertAndSend(destination, event);
+    }
 }

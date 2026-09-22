@@ -104,7 +104,11 @@ public final class UmlClass {
 
     /** Elimina un atributo por id. */
     public void removeAttribute(UUID attributeId) {
-        attributes.removeIf(a -> a.getId().equals(attributeId));
+        Objects.requireNonNull(attributeId, "attributeId no puede ser null");
+        boolean removed = attributes.removeIf(a -> a.getId().equals(attributeId));
+        if (!removed) {
+            throw new IllegalArgumentException("El atributo con id " + attributeId + " no existe en la clase " + this.name);
+        }
     }
 
     /** Elimina una operación por id. */

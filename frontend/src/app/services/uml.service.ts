@@ -44,6 +44,32 @@ export interface RenameClassResponse {
   modelVersion: number;
 }
 
+export interface RemoveAttributeRequest {
+  commandId: string;
+  participantId: string;
+  expectedVersion: number;
+}
+
+export interface RemoveAttributeResponse {
+  commandId: string;
+  classId: string;
+  attributeId: string;
+  modelVersion: number;
+}
+
+export interface AddAttributeResponse {
+  commandId: string;
+  classId: string;
+  attribute: {
+    id: string;
+    name: string;
+    type: string;
+    visibility: string;
+    orderIndex: number;
+  };
+  modelVersion: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UmlService {
   constructor(private http: HttpClient) {}
@@ -79,8 +105,8 @@ export class UmlService {
     projectId: string,
     classId: string,
     request: any
-  ): Observable<any> {
-    return this.http.post<any>(
+  ): Observable<AddAttributeResponse> {
+    return this.http.post<AddAttributeResponse>(
       `${API}/projects/${projectId}/classes/${classId}/attributes`,
       request
     );
@@ -95,6 +121,18 @@ export class UmlService {
     return this.http.put<any>(
       `${API}/projects/${projectId}/classes/${classId}/attributes/${attributeId}`,
       request
+    );
+  }
+
+  removeAttribute(
+    projectId: string,
+    classId: string,
+    attributeId: string,
+    request: RemoveAttributeRequest
+  ): Observable<RemoveAttributeResponse> {
+    return this.http.delete<RemoveAttributeResponse>(
+      `${API}/projects/${projectId}/classes/${classId}/attributes/${attributeId}`,
+      { body: request }
     );
   }
 }
