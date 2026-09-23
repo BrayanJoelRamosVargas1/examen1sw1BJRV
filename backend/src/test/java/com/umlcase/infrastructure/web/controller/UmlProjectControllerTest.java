@@ -79,6 +79,12 @@ class UmlProjectControllerTest {
     @MockBean
     private com.umlcase.application.port.in.ImportModelUseCase importModelUseCase;
 
+    @MockBean
+    private com.umlcase.application.port.in.GenerateRelationalSchemaUseCase generateRelationalSchemaUseCase;
+
+    @MockBean
+    private com.umlcase.application.port.out.RelationalSchemaExporter relationalSchemaExporter;
+
     // ─── Test del comportamiento correcto ─────────────────────────────────────
 
     @Test

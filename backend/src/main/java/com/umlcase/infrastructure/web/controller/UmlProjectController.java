@@ -32,6 +32,8 @@ public class UmlProjectController {
     private final com.umlcase.application.port.in.RemoveRelationshipUseCase removeRelationshipUseCase;
     private final com.umlcase.application.port.in.ExportModelUseCase exportModelUseCase;
     private final com.umlcase.application.port.in.ImportModelUseCase importModelUseCase;
+    private final com.umlcase.application.port.in.GenerateRelationalSchemaUseCase generateRelationalSchemaUseCase;
+    private final com.umlcase.application.port.out.RelationalSchemaExporter relationalSchemaExporter;
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
@@ -45,7 +47,9 @@ public class UmlProjectController {
                                 com.umlcase.application.port.in.UpdateRelationshipUseCase updateRelationshipUseCase,
                                 com.umlcase.application.port.in.RemoveRelationshipUseCase removeRelationshipUseCase,
                                 com.umlcase.application.port.in.ExportModelUseCase exportModelUseCase,
-                                com.umlcase.application.port.in.ImportModelUseCase importModelUseCase) {
+                                com.umlcase.application.port.in.ImportModelUseCase importModelUseCase,
+                                com.umlcase.application.port.in.GenerateRelationalSchemaUseCase generateRelationalSchemaUseCase,
+                                com.umlcase.application.port.out.RelationalSchemaExporter relationalSchemaExporter) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
@@ -59,6 +63,8 @@ public class UmlProjectController {
         this.removeRelationshipUseCase = removeRelationshipUseCase;
         this.exportModelUseCase = exportModelUseCase;
         this.importModelUseCase = importModelUseCase;
+        this.generateRelationalSchemaUseCase = generateRelationalSchemaUseCase;
+        this.relationalSchemaExporter = relationalSchemaExporter;
     }
 
     @GetMapping("/model")
@@ -431,5 +437,34 @@ public class UmlProjectController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/relational-schema")
+    public ResponseEntity<com.umlcase.infrastructure.web.dto.relational.RelationalSchemaResponse> getRelationalSchema(
+            @PathVariable java.util.UUID projectId) {
+        com.umlcase.domain.relational.RelationalSchema schema = generateRelationalSchemaUseCase.generateSchema(projectId);
+        return ResponseEntity.ok(mapToResponse(schema));
+    }
+
+    private com.umlcase.infrastructure.web.dto.relational.RelationalSchemaResponse mapToResponse(com.umlcase.domain.relational.RelationalSchema schema) {
+        return new com.umlcase.infrastructure.web.dto.relational.RelationalSchemaResponse(
+            schema.getTables().stream().map(t -> new com.umlcase.infrastructure.web.dto.relational.RelationalTableResponse(
+                t.getName(),
+                t.getPrimaryKey() == null ? null : new com.umlcase.infrastructure.web.dto.relational.RelationalPrimaryKeyResponse(t.getPrimaryKey().columns()),
+                t.getColumns().stream().map(c -> new com.umlcase.infrastructure.web.dto.relational.RelationalColumnResponse(c.name(), c.type(), c.isNullable())).toList(),
+                t.getForeignKeys().stream().map(fk -> new com.umlcase.infrastructure.web.dto.relational.RelationalForeignKeyResponse(fk.name(), fk.columns(), fk.targetTable(), fk.targetColumns(), fk.onDeleteCascade())).toList(),
+                t.getUniqueConstraints().stream().map(uc -> new com.umlcase.infrastructure.web.dto.relational.RelationalUniqueConstraintResponse(uc.name(), uc.columns())).toList()
+            )).toList()
+        );
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping(value = "/export/sql", produces = "text/plain; charset=UTF-8")
+    public ResponseEntity<byte[]> exportSql(@PathVariable java.util.UUID projectId) {
+        com.umlcase.domain.relational.RelationalSchema schema = generateRelationalSchemaUseCase.generateSchema(projectId);
+        byte[] sqlData = relationalSchemaExporter.exportToSql(schema);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "text/plain; charset=UTF-8")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"schema.sql\"")
+                .body(sqlData);
     }
 }
