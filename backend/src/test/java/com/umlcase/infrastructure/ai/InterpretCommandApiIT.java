@@ -11,6 +11,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.umlcase.application.ai.AiCommandInterpreter;
 import com.umlcase.application.ai.InterpretedUmlCommand;
+import com.umlcase.application.ai.UmlAssistant;
+import com.umlcase.application.ai.UmlAssistantResponse;
+import com.umlcase.application.ai.UmlModelFinding;
 import com.umlcase.domain.port.UmlModelRepository;
 
 import java.util.List;
@@ -35,6 +38,9 @@ class InterpretCommandApiIT {
 
     @MockBean
     private AiCommandInterpreter aiCommandInterpreter;
+
+    @MockBean
+    private UmlAssistant umlAssistant;
 
     @Autowired
     private AiProperties aiProperties;
@@ -126,5 +132,39 @@ class InterpretCommandApiIT {
     void startsWithAiDisabledAndNoApiKeyRequired() {
         org.junit.jupiter.api.Assertions.assertFalse(aiProperties.isEnabled());
         org.junit.jupiter.api.Assertions.assertTrue(aiProperties.getApiKey().isBlank());
+    }
+
+    @Test
+    void assistantReturnsStructuredReadOnlyResponse() throws Exception {
+        when(umlAssistant.answer(eq("¿Qué le falta?"), any(), any())).thenReturn(new UmlAssistantResponse(
+            "Se analizaron las clases.",
+            List.of(new UmlModelFinding("ISOLATED_CLASS", UmlModelFinding.Severity.INFO,
+                "Cliente está aislada.", "Cliente")),
+            List.of(new InterpretedUmlCommand("CREATE_CLASS", "Factura", null, null, null, null, null, null, null, null, null)),
+            List.of()));
+
+        String before = mockMvc.perform(get("/api/projects/{projectId}/model", PROJECT_ID))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        long versionBefore = new com.fasterxml.jackson.databind.ObjectMapper().readTree(before).path("version").asLong();
+
+        mockMvc.perform(post("/api/projects/{projectId}/ai/assistant", PROJECT_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\": \"¿Qué le falta?\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.answer").value("Se analizaron las clases."))
+            .andExpect(jsonPath("$.findings[0].code").value("EMPTY_MODEL"))
+            .andExpect(jsonPath("$.suggestedCommands[0].className").value("Factura"));
+
+        mockMvc.perform(get("/api/projects/{projectId}/model", PROJECT_ID))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.version").value(versionBefore));
+    }
+
+    @Test
+    void assistantRejectsOversizedMessage() throws Exception {
+        mockMvc.perform(post("/api/projects/{projectId}/ai/assistant", PROJECT_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\": \"" + "x".repeat(2001) + "\"}"))
+            .andExpect(status().isBadRequest());
     }
 }

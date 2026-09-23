@@ -89,6 +89,9 @@ class UmlProjectControllerTest {
     private com.umlcase.application.ai.InterpretUmlImageUseCase interpretUmlImageUseCase;
 
     @MockBean
+    private com.umlcase.application.ai.UmlAssistantUseCase umlAssistantUseCase;
+
+    @MockBean
     private com.umlcase.application.port.out.RelationalSchemaExporter relationalSchemaExporter;
 
     // ─── Test del comportamiento correcto ─────────────────────────────────────

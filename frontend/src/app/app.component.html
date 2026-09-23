@@ -122,6 +122,50 @@
     </div>
   </section>
 
+  <section class="create-section assistant-section">
+    <label for="assistant-message">Asistente UML</label>
+    <div class="natural-language-input">
+      <input
+        id="assistant-message"
+        type="text"
+        [(ngModel)]="assistantMessage"
+        placeholder="Pregúntame sobre tu modelo..."
+        (keyup.enter)="askAssistant()"
+        [disabled]="isProcessingAssistant || wsStatus !== 'connected'"
+      />
+      <button type="button" class="execute-btn" (click)="askAssistant()"
+              [disabled]="!assistantMessage.trim() || isProcessingAssistant || wsStatus !== 'connected'">
+        {{ isProcessingAssistant ? 'Analizando...' : 'Analizar' }}
+      </button>
+    </div>
+    <div class="assistant-result" *ngIf="assistantAnswer || assistantError || assistantFindings.length > 0 || assistantCommandsPreview.length > 0">
+      <p class="voice-error" *ngIf="assistantError">{{ assistantError }}</p>
+      <p *ngIf="assistantAnswer">{{ assistantAnswer }}</p>
+      <div *ngIf="assistantFindings.length > 0">
+        <strong>Observaciones</strong>
+        <ul>
+          <li *ngFor="let finding of assistantFindings">{{ finding.severity }}: {{ finding.message }}</li>
+        </ul>
+      </div>
+      <div *ngIf="assistantWarnings.length > 0">
+        <strong>Avisos</strong>
+        <ul><li *ngFor="let warning of assistantWarnings">{{ warning }}</li></ul>
+      </div>
+      <div *ngIf="assistantCommandsPreview.length > 0" class="command-preview">
+        <strong>Cambios sugeridos</strong>
+        <div *ngFor="let command of assistantCommandsPreview; let i = index">
+          {{ i + 1 }}. {{ getAiActionName(command.type) }}
+          <span *ngIf="command.className"> ({{ command.className }})</span>
+          <span *ngIf="command.attributeName"> -> {{ command.attributeName }}:{{ command.attributeType }}</span>
+        </div>
+        <div class="command-actions">
+          <button class="execute-btn" (click)="applyAssistantSuggestions()">Aplicar sugerencias</button>
+          <button class="cancel-btn" (click)="discardAssistantSuggestions()">Descartar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Crear clase -->
   <section class="create-section">
     <input

@@ -36,6 +36,7 @@ public class UmlProjectController {
     private final com.umlcase.application.port.out.RelationalSchemaExporter relationalSchemaExporter;
     private final com.umlcase.application.ai.InterpretNaturalLanguageCommandUseCase interpretNaturalLanguageCommandUseCase;
         private final com.umlcase.application.ai.InterpretUmlImageUseCase interpretUmlImageUseCase;
+        private final com.umlcase.application.ai.UmlAssistantUseCase umlAssistantUseCase;
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
@@ -53,7 +54,8 @@ public class UmlProjectController {
                                 com.umlcase.application.port.in.GenerateRelationalSchemaUseCase generateRelationalSchemaUseCase,
                                 com.umlcase.application.port.out.RelationalSchemaExporter relationalSchemaExporter,
                                 com.umlcase.application.ai.InterpretNaturalLanguageCommandUseCase interpretNaturalLanguageCommandUseCase,
-                                com.umlcase.application.ai.InterpretUmlImageUseCase interpretUmlImageUseCase) {
+                                com.umlcase.application.ai.InterpretUmlImageUseCase interpretUmlImageUseCase,
+                                com.umlcase.application.ai.UmlAssistantUseCase umlAssistantUseCase) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
@@ -71,6 +73,7 @@ public class UmlProjectController {
         this.relationalSchemaExporter = relationalSchemaExporter;
         this.interpretNaturalLanguageCommandUseCase = interpretNaturalLanguageCommandUseCase;
         this.interpretUmlImageUseCase = interpretUmlImageUseCase;
+        this.umlAssistantUseCase = umlAssistantUseCase;
     }
 
     @GetMapping("/model")
@@ -505,5 +508,18 @@ public class UmlProjectController {
         private AiImageInterpretResponse mapImageInterpretation(
                         com.umlcase.application.ai.UmlImageInterpretation interpretation) {
                 return new AiImageInterpretResponse(interpretation.commands(), interpretation.warnings());
+        }
+
+        public static class AssistantRequest {
+                private String message;
+                public String getMessage() { return message; }
+                public void setMessage(String message) { this.message = message; }
+        }
+
+        @org.springframework.web.bind.annotation.PostMapping("/ai/assistant")
+        public com.umlcase.application.ai.UmlAssistantResponse assistant(
+                        @PathVariable java.util.UUID projectId,
+                        @org.springframework.web.bind.annotation.RequestBody AssistantRequest request) {
+                return umlAssistantUseCase.execute(projectId, request.getMessage());
         }
 }

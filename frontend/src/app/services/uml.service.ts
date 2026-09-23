@@ -241,6 +241,20 @@ export interface UmlImageInterpretation {
   warnings: string[];
 }
 
+export interface UmlAssistantFinding {
+  code: string;
+  severity: 'INFO' | 'WARNING' | 'ERROR';
+  message: string;
+  elementName?: string;
+}
+
+export interface UmlAssistantResponse {
+  answer: string;
+  findings: UmlAssistantFinding[];
+  suggestedCommands: InterpretedUmlCommand[];
+  warnings: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class UmlService {
   constructor(private http: HttpClient) {}
@@ -442,6 +456,12 @@ export class UmlService {
     formData.append('file', file);
     return this.http.post<UmlImageInterpretation>(
       `${API}/projects/${projectId}/ai/interpret-image`, formData
+    );
+  }
+
+  askUmlAssistant(projectId: string, message: string): Observable<UmlAssistantResponse> {
+    return this.http.post<UmlAssistantResponse>(
+      `${API}/projects/${projectId}/ai/assistant`, { message }
     );
   }
 }

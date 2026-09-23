@@ -43,7 +43,7 @@ describe('AppComponent (Robustez STOMP)', () => {
   beforeEach(async () => {
     umlServiceSpy = jasmine.createSpyObj('UmlService', [
       'getModel', 'getDiagram', 'renameClass', 'interpretNaturalLanguage',
-      'interpretUmlImage', 'createClass', 'addAttribute', 'addOperation', 'addRelationship'
+      'interpretUmlImage', 'askUmlAssistant', 'createClass', 'addAttribute', 'addOperation', 'addRelationship'
     ]);
 
     eventsSubject = new Subject();
@@ -405,5 +405,60 @@ describe('AppComponent (Robustez STOMP)', () => {
     expect(app.imagePreview).toBe('');
     expect(app.aiCommandsPreview).toEqual([]);
     expect(umlServiceSpy.createClass).not.toHaveBeenCalled();
+  });
+
+  it('displays assistant answer, findings and suggested commands', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    umlServiceSpy.askUmlAssistant.and.returnValue(of({
+      answer: 'Tu modelo tiene una clase aislada.',
+      findings: [{ code: 'ISOLATED_CLASS', severity: 'INFO', message: 'Cliente está aislada.' }],
+      suggestedCommands: [{ type: 'CREATE_CLASS', className: 'Factura' }],
+      warnings: []
+    } as any));
+
+    app.assistantMessage = '¿Qué le falta a mi modelo?';
+    app.askAssistant();
+
+    expect(umlServiceSpy.askUmlAssistant).toHaveBeenCalledWith(app.projectId, '¿Qué le falta a mi modelo?');
+    expect(app.assistantAnswer).toContain('aislada');
+    expect(app.assistantFindings.length).toBe(1);
+    expect(app.assistantCommandsPreview[0].className).toBe('Factura');
+  });
+
+  it('discarding assistant suggestions performs zero mutations', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    app.assistantCommandsPreview = [{ type: 'CREATE_CLASS', className: 'Factura' }];
+
+    app.discardAssistantSuggestions();
+
+    expect(app.assistantCommandsPreview).toEqual([]);
+    expect(umlServiceSpy.createClass).not.toHaveBeenCalled();
+  });
+
+  it('applies assistant suggestions through the existing batch executor', fakeAsync(() => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    app.currentVersion = 2;
+    app.assistantCommandsPreview = [{ type: 'CREATE_CLASS', className: 'Factura' }];
+    umlServiceSpy.createClass.and.returnValue(of({ classId: 'c9', className: 'Factura', modelVersion: 3 } as any));
+
+    app.applyAssistantSuggestions();
+    tick(50);
+
+    expect(umlServiceSpy.createClass).toHaveBeenCalled();
+    expect(umlServiceSpy.createClass.calls.mostRecent().args[1].expectedVersion).toBe(2);
+  }));
+
+  it('shows a controlled error when the assistant backend fails', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    umlServiceSpy.askUmlAssistant.and.returnValue(throwError(() => ({ error: { error: 'Asistente no disponible' } })));
+
+    app.assistantMessage = 'resume el modelo';
+    app.askAssistant();
+
+    expect(app.assistantError).toContain('Asistente no disponible');
   });
 });

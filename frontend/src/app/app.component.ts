@@ -45,6 +45,13 @@ export class AppComponent implements OnInit, OnDestroy {
   imageWarnings: string[] = [];
   imageError = '';
   isProcessingImage = false;
+  assistantMessage = '';
+  assistantAnswer = '';
+  assistantFindings: import('./services/uml.service').UmlAssistantFinding[] = [];
+  assistantWarnings: string[] = [];
+  assistantCommandsPreview: import('./services/uml.service').InterpretedUmlCommand[] = [];
+  isProcessingAssistant = false;
+  assistantError = '';
   private voiceParser = new VoiceCommandParser();
 
   // Buffer de eventos que llegan antes de que el GET snapshot termine
@@ -1264,6 +1271,40 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  askAssistant(): void {
+    const message = this.assistantMessage.trim();
+    if (!message) return;
+    this.isProcessingAssistant = true;
+    this.assistantError = '';
+    this.assistantAnswer = '';
+    this.assistantFindings = [];
+    this.assistantWarnings = [];
+    this.assistantCommandsPreview = [];
+    this.umlService.askUmlAssistant(this.projectId, message).subscribe({
+      next: response => {
+        this.isProcessingAssistant = false;
+        this.assistantAnswer = response.answer;
+        this.assistantFindings = response.findings || [];
+        this.assistantWarnings = response.warnings || [];
+        this.assistantCommandsPreview = response.suggestedCommands || [];
+      },
+      error: err => {
+        this.isProcessingAssistant = false;
+        this.assistantError = 'Error del asistente: ' + (err.error?.error || err.message);
+      }
+    });
+  }
+
+  applyAssistantSuggestions(): void {
+    this.aiCommandsPreview = [...this.assistantCommandsPreview];
+    this.assistantCommandsPreview = [];
+    this.executeAiCommandsBatch();
+  }
+
+  discardAssistantSuggestions(): void {
+    this.assistantCommandsPreview = [];
+  }
+
   getVoiceActionName(type: VoiceCommandType): string {
     switch (type) {
       case VoiceCommandType.CREATE_CLASS: return 'Crear clase';
@@ -1285,6 +1326,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.imageWarnings = [];
     this.imageError = '';
     this.isProcessingImage = false;
+    this.assistantCommandsPreview = [];
   }
 
   getAiActionName(type: string): string {
