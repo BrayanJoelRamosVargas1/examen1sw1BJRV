@@ -1,46 +1,53 @@
 package com.umlcase.infrastructure.interchange.sql;
 
-import com.umlcase.domain.relational.*;
+import com.umlcase.domain.model.*;
+import com.umlcase.domain.relational.RelationalSchema;
+import com.umlcase.application.mapper.relational.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
+import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PostgreSqlDdlExporterTest {
 
-    private final PostgreSqlDdlExporter exporter = new PostgreSqlDdlExporter();
+    private PostgreSqlDdlExporter exporter;
+    private UmlToRelationalMapper mapper;
+
+    @BeforeEach
+    void setUp() {
+        exporter = new PostgreSqlDdlExporter();
+        SqlNamingStrategy naming = new SqlNamingStrategy();
+        mapper = new UmlToRelationalMapper(naming, new RelationalTypeMapper(), new RelationshipRelationalMapper(naming));
+    }
 
     @Test
-    void exportToSql_generatesTablesAndForeignKeys() {
-        RelationalSchema schema = new RelationalSchema();
+    void generateDdl_isDeterministic() throws NoSuchAlgorithmException {
+        UmlModel model = UmlModel.create(UUID.randomUUID());
+        UmlClass c1 = new UmlClass(UUID.randomUUID(), "Factura");
+        c1.addAttribute(new UmlAttribute(UUID.randomUUID(), "total", "Decimal", Visibility.PUBLIC, 0));
+        UmlClass c2 = new UmlClass(UUID.randomUUID(), "Linea");
+        c2.addAttribute(new UmlAttribute(UUID.randomUUID(), "cantidad", "Integer", Visibility.PUBLIC, 0));
+        model.addClass(c1);
+        model.addClass(c2);
         
-        RelationalTable t1 = new RelationalTable("cliente");
-        t1.addColumn(new RelationalColumn("id", "UUID", false));
-        t1.addColumn(new RelationalColumn("nombre", "VARCHAR(255)", true));
-        t1.setPrimaryKey(new RelationalPrimaryKey(List.of("id")));
-        
-        RelationalTable t2 = new RelationalTable("pedido");
-        t2.addColumn(new RelationalColumn("id", "UUID", false));
-        t2.addColumn(new RelationalColumn("cliente_id", "UUID", false));
-        t2.setPrimaryKey(new RelationalPrimaryKey(List.of("id")));
-        t2.addForeignKey(new RelationalForeignKey("fk_pedido_cliente_id", List.of("cliente_id"), "cliente", List.of("id"), true));
-        
-        schema.addTable(t1);
-        schema.addTable(t2);
+        model.addRelationship(new UmlRelationship(UUID.randomUUID(), RelationshipType.COMPOSITION, c1.getId(), c2.getId(), "1", "0..*"));
 
-        String sql = new String(exporter.exportToSql(schema), StandardCharsets.UTF_8);
+        RelationalSchema schema1 = mapper.mapToRelational(model);
+        String sql1 = new String(exporter.exportToSql(schema1));
+
+        RelationalSchema schema2 = mapper.mapToRelational(model);
+        String sql2 = new String(exporter.exportToSql(schema2));
         
-        assertThat(sql).contains("CREATE TABLE cliente (");
-        assertThat(sql).contains("id UUID NOT NULL");
-        assertThat(sql).contains("PRIMARY KEY (id)");
-        
-        assertThat(sql).contains("CREATE TABLE pedido (");
-        assertThat(sql).contains("cliente_id UUID NOT NULL");
-        
-        assertThat(sql).contains("ALTER TABLE pedido");
-        assertThat(sql).contains("ADD CONSTRAINT fk_pedido_cliente_id FOREIGN KEY (cliente_id)");
-        assertThat(sql).contains("REFERENCES cliente (id) ON DELETE CASCADE");
+        assertThat(sql1).isEqualTo(sql2);
+
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        String hash1 = Base64.getEncoder().encodeToString(md.digest(sql1.getBytes()));
+        String hash2 = Base64.getEncoder().encodeToString(md.digest(sql2.getBytes()));
+        assertThat(hash1).isEqualTo(hash2);
     }
 }

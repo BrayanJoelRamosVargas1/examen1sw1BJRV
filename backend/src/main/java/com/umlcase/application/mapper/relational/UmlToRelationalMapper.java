@@ -28,23 +28,23 @@ public class UmlToRelationalMapper {
 
     public RelationalSchema mapToRelational(UmlModel model) {
         RelationalSchema schema = new RelationalSchema();
-        namingStrategy.reset();
+        RelationalMappingContext context = new RelationalMappingContext();
 
         Map<UUID, RelationalTable> tableMap = new HashMap<>();
 
         // First pass: create tables for all classes
         for (UmlClass cls : model.getClasses()) {
-            RelationalTable table = new RelationalTable(namingStrategy.toTableName(cls.getName()));
-            namingStrategy.resetColumns();
+            RelationalTable table = new RelationalTable(context.generateTableName(cls.getName(), namingStrategy));
+            context.resetColumns();
 
             // Technical PK
-            String pkName = namingStrategy.toColumnName("id");
+            String pkName = context.generateColumnName("id", namingStrategy, true);
             table.addColumn(new RelationalColumn(pkName, "UUID", false));
             table.setPrimaryKey(new RelationalPrimaryKey(List.of(pkName)));
 
             // Attributes to Columns
             for (UmlAttribute attr : cls.getAttributes()) {
-                String colName = namingStrategy.toColumnName(attr.getName(), true);
+                String colName = context.generateColumnName(attr.getName(), namingStrategy, true);
                 String sqlType = typeMapper.mapType(attr.getType());
                 // UML attributes are nullable by default in this implementation unless multiplicity is 1, but we don't model attribute multiplicity yet
                 table.addColumn(new RelationalColumn(colName, sqlType, true));
@@ -55,7 +55,7 @@ public class UmlToRelationalMapper {
         }
 
         // Second pass: map relationships (Generalization, Association, Aggregation, Composition)
-        relationshipMapper.mapRelationships(model, tableMap, schema);
+        relationshipMapper.mapRelationships(model, tableMap, schema, context);
 
         return schema;
     }

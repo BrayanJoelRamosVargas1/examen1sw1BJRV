@@ -19,7 +19,7 @@ public class RelationshipRelationalMapper {
         this.namingStrategy = namingStrategy;
     }
 
-    public void mapRelationships(UmlModel model, Map<UUID, RelationalTable> tableMap, RelationalSchema schema) {
+    public void mapRelationships(UmlModel model, Map<UUID, RelationalTable> tableMap, RelationalSchema schema, RelationalMappingContext context) {
         // First map generalizations to avoid duplicating columns and setup joined inheritance
         checkGeneralizationCycles(model);
         
@@ -68,7 +68,7 @@ public class RelationshipRelationalMapper {
             if (sourceIsMany && targetIsMany) {
                 // N-M -> Join table
                 String joinTableName = generateJoinTableName(sourceTable.getName(), targetTable.getName());
-                RelationalTable joinTable = new RelationalTable(namingStrategy.toTableName(joinTableName));
+                RelationalTable joinTable = new RelationalTable(context.generateTableName(joinTableName, namingStrategy));
                 
                 String sourceFkCol = namingStrategy.toSnakeCase(sourceTable.getName()) + "_id";
                 String targetFkCol = namingStrategy.toSnakeCase(targetTable.getName()) + "_id";
