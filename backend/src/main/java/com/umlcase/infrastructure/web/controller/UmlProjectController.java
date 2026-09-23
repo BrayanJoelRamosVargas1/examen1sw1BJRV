@@ -144,7 +144,7 @@ public class UmlProjectController {
 
             return ResponseEntity.ok(response);
         } catch (java.io.IOException e) {
-            throw new RuntimeException("Error al leer el archivo XMI", e);
+            throw new IllegalArgumentException("Error al leer el archivo XMI", e);
         }
     }
 

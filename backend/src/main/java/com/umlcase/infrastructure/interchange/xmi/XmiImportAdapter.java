@@ -69,7 +69,7 @@ public class XmiImportAdapter implements UmlInterchangeImporter {
 
             return model;
         } catch (Exception e) {
-            throw new RuntimeException("Error parsing XMI: " + e.getMessage(), e);
+            throw new IllegalArgumentException("Error parsing XMI: " + e.getMessage(), e);
         }
     }
 

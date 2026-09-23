@@ -76,6 +76,9 @@ class UmlProjectControllerTest {
     @MockBean
     private com.umlcase.application.port.in.ExportModelUseCase exportModelUseCase;
 
+    @MockBean
+    private com.umlcase.application.port.in.ImportModelUseCase importModelUseCase;
+
     // ─── Test del comportamiento correcto ─────────────────────────────────────
 
     @Test
