@@ -47,7 +47,9 @@ class CreateClassHandlerTest {
     void setUp() {
         repository = new FakeUmlModelRepository();
         publisher = new FakeUmlEventPublisher();
-        handler = new CreateClassHandler(repository, publisher);
+        com.umlcase.infrastructure.persistence.repository.ProcessedCommandRepository mockProcessedCommandRepository = org.mockito.Mockito.mock(com.umlcase.infrastructure.persistence.repository.ProcessedCommandRepository.class);
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        handler = new CreateClassHandler(repository, publisher, mockProcessedCommandRepository, objectMapper);
     }
 
     // ── Escenario: éxito ─────────────────────────────────────────────────────

@@ -33,7 +33,9 @@ class AddAttributeHandlerTest {
     void setUp() {
         repository = mock(UmlModelRepository.class);
         eventPublisher = mock(UmlEventPublisher.class);
-        handler = new AddAttributeHandler(repository, eventPublisher);
+        com.umlcase.infrastructure.persistence.repository.ProcessedCommandRepository mockProcessedCommandRepository = org.mockito.Mockito.mock(com.umlcase.infrastructure.persistence.repository.ProcessedCommandRepository.class);
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        handler = new AddAttributeHandler(repository, eventPublisher, mockProcessedCommandRepository, objectMapper);
     }
 
     @Test

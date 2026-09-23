@@ -18,10 +18,11 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", ex.getMessage()));
     }
 
-    @ExceptionHandler(ModelVersionConflictException.class)
-    public ResponseEntity<?> handleModelVersionConflict(ModelVersionConflictException ex) {
+    @ExceptionHandler({ModelVersionConflictException.class, com.umlcase.application.exception.CommandIdReuseException.class})
+    public ResponseEntity<?> handleModelVersionConflict(RuntimeException ex) {
+        String code = ex instanceof com.umlcase.application.exception.CommandIdReuseException ? "COMMAND_ID_REUSE" : "MODEL_VERSION_CONFLICT";
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new com.umlcase.infrastructure.web.dto.ApiErrorResponse("MODEL_VERSION_CONFLICT", ex.getMessage()));
+                .body(new com.umlcase.infrastructure.web.dto.ApiErrorResponse(code, ex.getMessage()));
     }
 
     @ExceptionHandler(com.umlcase.domain.exception.DiagramVersionConflictException.class)

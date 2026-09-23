@@ -18,10 +18,16 @@ public class CreateClassHandler {
 
     private final UmlModelRepository repository;
     private final UmlEventPublisher publisher;
+    private final com.umlcase.infrastructure.persistence.repository.ProcessedCommandRepository processedCommandRepository;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
-    public CreateClassHandler(UmlModelRepository repository, UmlEventPublisher publisher) {
+    public CreateClassHandler(UmlModelRepository repository, UmlEventPublisher publisher,
+                              com.umlcase.infrastructure.persistence.repository.ProcessedCommandRepository processedCommandRepository,
+                              com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.repository = repository;
         this.publisher = publisher;
+        this.processedCommandRepository = processedCommandRepository;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -37,6 +43,24 @@ public class CreateClassHandler {
      */
     @Transactional
     public CreateClassResponse handle(UmlCommand.CreateClass command) {
+        String payloadStr = "CREATE_CLASS|" + command.className();
+        String fingerprint = com.umlcase.application.port.out.CommandFingerprint.calculate("CREATE_CLASS", payloadStr);
+
+        com.umlcase.infrastructure.persistence.entity.ProcessedCommandId processedCommandId = new com.umlcase.infrastructure.persistence.entity.ProcessedCommandId(command.projectId().toString(), command.commandId().toString());
+        java.util.Optional<com.umlcase.infrastructure.persistence.entity.ProcessedCommand> existingReceiptOpt = processedCommandRepository.findById(processedCommandId);
+
+        if (existingReceiptOpt.isPresent()) {
+            com.umlcase.infrastructure.persistence.entity.ProcessedCommand existingReceipt = existingReceiptOpt.get();
+            if (!existingReceipt.getRequestFingerprint().equals(fingerprint)) {
+                throw new com.umlcase.application.exception.CommandIdReuseException("Reuso de commandId con diferente payload");
+            }
+            try {
+                return objectMapper.readValue(existingReceipt.getResponsePayload(), CreateClassResponse.class);
+            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                throw new RuntimeException("Error parsing response payload", e);
+            }
+        }
+
         // 1. Obtener el modelo por projectId
         UmlModel model = repository.findByProjectId(command.projectId())
                 .orElseThrow(() -> new ProjectNotFoundException(
@@ -66,13 +90,28 @@ public class CreateClassHandler {
                 savedModel.getVersion()   // ← versión real post-flush
         ));
 
-        // 6. Devolver respuesta — la transacción hace commit al salir del método
-        //    AFTER_COMMIT dispara StompUmlEventListener → SimpMessagingTemplate
-        return new CreateClassResponse(
+        CreateClassResponse response = new CreateClassResponse(
                 command.commandId().toString(),
                 newClass.getId(),
                 newClass.getName(),
                 savedModel.getVersion()   // ← versión real post-flush
         );
+
+        com.umlcase.infrastructure.persistence.entity.ProcessedCommand processedCommand = com.umlcase.infrastructure.persistence.entity.ProcessedCommand.builder()
+                .projectId(command.projectId().toString())
+                .commandId(command.commandId().toString())
+                .commandType("CREATE_CLASS")
+                .requestFingerprint(fingerprint)
+                .modelVersion(savedModel.getVersion())
+                .createdAt(java.time.LocalDateTime.now())
+                .build();
+        try {
+            processedCommand.setResponsePayload(objectMapper.writeValueAsString(response));
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new RuntimeException("Error serializing response payload", e);
+        }
+        processedCommandRepository.save(processedCommand);
+
+        return response;
     }
 }

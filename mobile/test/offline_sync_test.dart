@@ -28,6 +28,13 @@ class MemoryStore implements OfflineStore {
   @override
   Future<void> saveLocalIdMap(Map<String, String> value) async =>
       mapping = value;
+  @override
+  Future<OfflineSyncState?> loadSyncState() async => OfflineSyncState(pendingCommands: commands, localIdMap: mapping);
+  @override
+  Future<void> saveSyncState(OfflineSyncState state) async {
+    commands = state.pendingCommands;
+    mapping = state.localIdMap;
+  }
 }
 
 void main() {

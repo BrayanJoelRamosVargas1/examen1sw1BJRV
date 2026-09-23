@@ -147,15 +147,14 @@ class OfflineSyncService {
           localToServerId[tempClassId] = result.classId!;
         }
         queue.removeAt(index--);
-        await store.savePendingCommands(queue);
-        await store.saveLocalIdMap(localToServerId);
+        await store.saveSyncState(OfflineSyncState(pendingCommands: queue, localIdMap: localToServerId));
       } on UmlApiException catch (error) {
         queue[index] = command.copyWith(
           status: error.statusCode == 409
               ? PendingCommandStatus.conflict
               : PendingCommandStatus.failed,
         );
-        await store.savePendingCommands(queue);
+        await store.saveSyncState(OfflineSyncState(pendingCommands: queue, localIdMap: localToServerId));
         final conflictState = error.statusCode == 409
             ? OfflineState.conflict
             : OfflineState.conflict;
