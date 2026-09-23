@@ -7,6 +7,7 @@ import com.umlcase.domain.model.UmlRelationship;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,8 +35,8 @@ public class UmlModelSemanticAssert {
         for (UmlRelationship origRel : original.getRelationships()) {
             boolean found = imported.getRelationships().stream().anyMatch(impRel -> 
                 impRel.getType() == origRel.getType() &&
-                impRel.getSourceMultiplicity().equals(origRel.getSourceMultiplicity()) &&
-                impRel.getTargetMultiplicity().equals(origRel.getTargetMultiplicity()) &&
+                equivalentMultiplicity(impRel.getSourceMultiplicity(), origRel.getSourceMultiplicity()) &&
+                equivalentMultiplicity(impRel.getTargetMultiplicity(), origRel.getTargetMultiplicity()) &&
                 getOriginalClassName(original, origRel.getSourceClassId()).equals(getOriginalClassName(imported, impRel.getSourceClassId())) &&
                 getOriginalClassName(original, origRel.getTargetClassId()).equals(getOriginalClassName(imported, impRel.getTargetClassId()))
             );
@@ -57,6 +58,14 @@ public class UmlModelSemanticAssert {
                 .findFirst()
                 .map(UmlClass::getName)
                 .orElse("UNKNOWN");
+    }
+
+    private static boolean equivalentMultiplicity(String imported, String original) {
+        if (Objects.equals(imported, original)) return true;
+        if ("*".equals(imported) && "0..*".equals(original)) return true;
+        if ("0..*".equals(imported) && "*".equals(original)) return true;
+        return (imported == null || imported.isBlank()) && "1".equals(original)
+            || (original == null || original.isBlank()) && "1".equals(imported);
     }
 
     private static void assertClassesEquivalent(UmlClass orig, UmlClass imp) {

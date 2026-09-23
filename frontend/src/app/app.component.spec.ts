@@ -461,4 +461,23 @@ describe('AppComponent (Robustez STOMP)', () => {
 
     expect(app.assistantError).toContain('Asistente no disponible');
   });
+
+  it('renders the integral CASE entry points together', fakeAsync(() => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    app.wsStatus = 'connected';
+    umlServiceSpy.getModel.and.returnValue(makeModelSnapshot(1));
+    umlServiceSpy.getDiagram.and.returnValue(of({ projectId: app.projectId, layoutVersion: 1, nodeViews: [] }));
+
+    fixture.detectChanges();
+    tick();
+    const text = fixture.nativeElement.textContent;
+
+    expect(text).toContain('Modelar por voz');
+    expect(text).toContain('Importar foto UML');
+    expect(text).toContain('Asistente UML');
+    expect(text).toContain('Exportar XMI 2.1');
+    expect(text).toContain('Exportar SQL');
+    expect(text).toContain('Generar Backend');
+  }));
 });
