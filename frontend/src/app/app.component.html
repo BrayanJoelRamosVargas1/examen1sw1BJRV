@@ -15,6 +15,7 @@
       <span class="project-label">Proyecto: <code>{{ projectId }}</code></span>
       <button class="export-xmi-btn" (click)="exportXmi()" [disabled]="wsStatus !== 'connected'">Exportar XMI 2.1</button>
       <button class="export-sql-btn" (click)="exportSql()" [disabled]="wsStatus !== 'connected'">Exportar SQL</button>
+      <button class="export-sql-btn" (click)="exportSpringBoot()" [disabled]="wsStatus !== 'connected'">Generar Backend</button>
       <input type="file" #fileInput (change)="onFileSelected($event)" accept=".xmi,application/xml" style="display: none;">
       <button class="import-xmi-btn" (click)="fileInput.click()" [disabled]="wsStatus !== 'connected'">Importar XMI 2.1</button>
     </div>

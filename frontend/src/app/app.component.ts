@@ -1095,6 +1095,22 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  exportSpringBoot(): void {
+    this.umlService.exportSpringBoot(this.projectId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'generated-backend.zip';
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        this.errorMessage = 'Error generando backend: ' + (err.error?.error || err.message);
+      }
+    });
+  }
+
   onFileSelected(event: any): void {
     const file: File = event.target.files[0];
     if (!file) return;

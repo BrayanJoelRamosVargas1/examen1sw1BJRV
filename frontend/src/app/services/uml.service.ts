@@ -389,6 +389,12 @@ export class UmlService {
     });
   }
 
+  exportSpringBoot(projectId: string): Observable<Blob> {
+    return this.http.get(`${API}/projects/${projectId}/generate/backend`, {
+      responseType: 'blob'
+    });
+  }
+
   importXmi(
     projectId: string,
     file: File,
