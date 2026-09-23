@@ -376,4 +376,10 @@ export class UmlService {
       y
     });
   }
+
+  exportXmi(projectId: string): Observable<Blob> {
+    return this.http.get(`${API}/projects/${projectId}/export/xmi`, {
+      responseType: 'blob'
+    });
+  }
 }

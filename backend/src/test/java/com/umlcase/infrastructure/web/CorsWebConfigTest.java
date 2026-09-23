@@ -71,6 +71,9 @@ class CorsWebConfigTest {
     @MockBean
     private com.umlcase.application.port.in.RemoveRelationshipUseCase removeRelationshipUseCase;
 
+    @MockBean
+    private com.umlcase.application.port.in.ExportModelUseCase exportModelUseCase;
+
     @Test
     @DisplayName("GET /api/projects/{projectId}/model permite CORS desde localhost:4200")
     void cors_allowsGetFromLocalhost() throws Exception {

@@ -13,6 +13,7 @@
       <span class="status-badge" [ngClass]="wsStatus">{{ wsStatus }}</span>
       <span class="version-label">Versión: <strong>{{ currentVersion }}</strong></span>
       <span class="project-label">Proyecto: <code>{{ projectId }}</code></span>
+      <button class="export-xmi-btn" (click)="exportXmi()" [disabled]="wsStatus !== 'connected'">Exportar XMI 2.1</button>
     </div>
   </header>
 

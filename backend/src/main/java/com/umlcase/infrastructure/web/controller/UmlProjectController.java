@@ -30,6 +30,7 @@ public class UmlProjectController {
     private final com.umlcase.application.port.in.AddRelationshipUseCase addRelationshipUseCase;
     private final com.umlcase.application.port.in.UpdateRelationshipUseCase updateRelationshipUseCase;
     private final com.umlcase.application.port.in.RemoveRelationshipUseCase removeRelationshipUseCase;
+    private final com.umlcase.application.port.in.ExportModelUseCase exportModelUseCase;
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
@@ -41,7 +42,8 @@ public class UmlProjectController {
                                 com.umlcase.application.handler.RemoveOperationHandler removeOperationHandler,
                                 com.umlcase.application.port.in.AddRelationshipUseCase addRelationshipUseCase,
                                 com.umlcase.application.port.in.UpdateRelationshipUseCase updateRelationshipUseCase,
-                                com.umlcase.application.port.in.RemoveRelationshipUseCase removeRelationshipUseCase) {
+                                com.umlcase.application.port.in.RemoveRelationshipUseCase removeRelationshipUseCase,
+                                com.umlcase.application.port.in.ExportModelUseCase exportModelUseCase) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
@@ -53,6 +55,7 @@ public class UmlProjectController {
         this.addRelationshipUseCase = addRelationshipUseCase;
         this.updateRelationshipUseCase = updateRelationshipUseCase;
         this.removeRelationshipUseCase = removeRelationshipUseCase;
+        this.exportModelUseCase = exportModelUseCase;
     }
 
     @GetMapping("/model")
@@ -99,6 +102,15 @@ public class UmlProjectController {
                 .header("Pragma", "no-cache")
                 .header("Expires", "0")
                 .body(dto);
+    }
+
+    @GetMapping("/export/xmi")
+    public ResponseEntity<byte[]> exportXmi(@PathVariable UUID projectId) {
+        byte[] xmiData = exportModelUseCase.exportModel(projectId);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "application/xml")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"uml-model.xmi\"")
+                .body(xmiData);
     }
 
     @org.springframework.web.bind.annotation.PatchMapping("/classes/{classId}")

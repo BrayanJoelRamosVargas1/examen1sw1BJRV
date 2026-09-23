@@ -1058,4 +1058,20 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  exportXmi(): void {
+    this.umlService.exportXmi(this.projectId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `uml-model-${this.projectId}.xmi`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        this.errorMessage = 'Error exportando XMI: ' + (err.error?.error || err.message);
+      }
+    });
+  }
 }
