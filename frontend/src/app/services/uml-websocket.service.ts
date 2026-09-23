@@ -198,7 +198,7 @@ export class UmlWebSocketService {
       this.statusSubject.next('connecting');
 
       this.client = new Client({
-        webSocketFactory: () => new SockJS('http://localhost:8080/ws-uml'),
+        webSocketFactory: () => new SockJS('/ws-uml'),
         reconnectDelay: 5000,
 
         onConnect: () => {

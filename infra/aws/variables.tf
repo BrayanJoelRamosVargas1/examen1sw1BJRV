@@ -26,7 +26,6 @@ variable "db_username" {
 variable "db_password" {
   description = "Database password"
   type        = string
-  default     = "SuperSecurePassword123!" # Change for real deployments
   sensitive   = true
 }
 

@@ -57,7 +57,7 @@ resource "aws_lb_target_group" "backend" {
   target_type = "ip"
 
   health_check {
-    path                = "/api/models" # Simple health check endpoint or actuator
+    path                = "/actuator/health/readiness"
     healthy_threshold   = 2
     unhealthy_threshold = 10
   }
@@ -87,7 +87,7 @@ resource "aws_lb_listener_rule" "backend_api" {
 
   condition {
     path_pattern {
-      values = ["/api/*", "/ws/*"]
+      values = ["/api/*", "/ws-uml*", "/actuator/*"]
     }
   }
 }

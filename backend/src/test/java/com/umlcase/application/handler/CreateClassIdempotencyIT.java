@@ -21,9 +21,12 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import org.springframework.test.annotation.DirtiesContext;
+
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class CreateClassIdempotencyIT {
 
     @Container
@@ -34,6 +37,10 @@ class CreateClassIdempotencyIT {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.PostgreSQLDialect");
+        registry.add("spring.flyway.enabled", () -> "true");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
     }
 
     @Autowired
@@ -43,22 +50,24 @@ class CreateClassIdempotencyIT {
     private UmlModelRepository repository;
 
     private UUID projectId;
+    private Long initialVersion;
 
     @BeforeEach
     void setUp() {
         UmlModel model = UmlModel.create(UUID.randomUUID());
         UmlModel saved = repository.save(model);
         projectId = saved.getProjectId();
+        initialVersion = saved.getVersion();
     }
 
     @Test
     void shouldReturnSameResultOnIdempotentRetry() {
         UUID commandId = UUID.randomUUID();
-        UmlCommand.CreateClass command = new UmlCommand.CreateClass(commandId, projectId, "user1", 0L, "MyClass");
+        UmlCommand.CreateClass command = new UmlCommand.CreateClass(commandId, projectId, "user1", initialVersion, "MyClass");
         
         CreateClassResponse response1 = handler.handle(command);
         assertThat(response1.className()).isEqualTo("MyClass");
-        assertThat(response1.modelVersion()).isEqualTo(1L);
+        assertThat(response1.modelVersion()).isEqualTo(initialVersion + 1L);
 
         // Retry exactly same
         CreateClassResponse response2 = handler.handle(command);
@@ -70,16 +79,16 @@ class CreateClassIdempotencyIT {
         // Verify only 1 class was created
         UmlModel model = repository.findByProjectId(projectId).orElseThrow();
         assertThat(model.getClasses()).hasSize(1);
-        assertThat(model.getVersion()).isEqualTo(1L);
+        assertThat(model.getVersion()).isEqualTo(initialVersion + 1L);
     }
 
     @Test
     void shouldThrowOnCommandIdReuseWithDifferentPayload() {
         UUID commandId = UUID.randomUUID();
-        UmlCommand.CreateClass command1 = new UmlCommand.CreateClass(commandId, projectId, "user1", 0L, "ClassA");
+        UmlCommand.CreateClass command1 = new UmlCommand.CreateClass(commandId, projectId, "user1", initialVersion, "ClassA");
         handler.handle(command1);
 
-        UmlCommand.CreateClass command2 = new UmlCommand.CreateClass(commandId, projectId, "user1", 0L, "ClassB");
+        UmlCommand.CreateClass command2 = new UmlCommand.CreateClass(commandId, projectId, "user1", initialVersion, "ClassB");
         
         assertThatThrownBy(() -> handler.handle(command2))
                 .isInstanceOf(CommandIdReuseException.class)

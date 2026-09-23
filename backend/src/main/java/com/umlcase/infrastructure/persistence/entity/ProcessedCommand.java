@@ -34,7 +34,7 @@ public class ProcessedCommand {
     private String requestFingerprint;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "response_payload", columnDefinition = "jsonb")
+    @Column(name = "response_payload")
     private String responsePayload;
 
     @Column(name = "model_version", nullable = false)

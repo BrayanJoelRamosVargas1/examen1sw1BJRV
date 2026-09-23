@@ -65,7 +65,7 @@ resource "aws_ecs_task_definition" "frontend" {
   container_definitions = jsonencode([
     {
       name      = "frontend"
-      image     = "frontend-image:latest" # Update with actual ECR URI
+      image     = "${aws_ecr_repository.frontend.repository_url}:latest"
       essential = true
       portMappings = [
         {
@@ -97,7 +97,7 @@ resource "aws_ecs_task_definition" "backend" {
   container_definitions = jsonencode([
     {
       name      = "backend"
-      image     = "backend-image:latest" # Update with actual ECR URI
+      image     = "${aws_ecr_repository.backend.repository_url}:latest"
       essential = true
       portMappings = [
         {
@@ -145,9 +145,9 @@ resource "aws_ecs_service" "frontend" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
+    subnets          = var.enable_nat_gateway ? aws_subnet.private[*].id : aws_subnet.public[*].id
     security_groups  = [aws_security_group.ecs_tasks.id]
-    assign_public_ip = false # Requires NAT Gateway. If NAT is disabled, put in public subnets with assign_public_ip = true
+    assign_public_ip = var.enable_nat_gateway ? false : true
   }
 
   load_balancer {
@@ -168,9 +168,9 @@ resource "aws_ecs_service" "backend" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
+    subnets          = var.enable_nat_gateway ? aws_subnet.private[*].id : aws_subnet.public[*].id
     security_groups  = [aws_security_group.ecs_tasks.id]
-    assign_public_ip = false
+    assign_public_ip = var.enable_nat_gateway ? false : true
   }
 
   load_balancer {

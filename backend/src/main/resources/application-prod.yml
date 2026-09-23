@@ -25,3 +25,14 @@ logging:
     com.umlcase: INFO
     org.springframework.web: WARN
     org.hibernate: ERROR
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never

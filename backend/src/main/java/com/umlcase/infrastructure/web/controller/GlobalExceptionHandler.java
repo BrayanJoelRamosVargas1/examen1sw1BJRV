@@ -18,7 +18,12 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", ex.getMessage()));
     }
 
-    @ExceptionHandler({ModelVersionConflictException.class, com.umlcase.application.exception.CommandIdReuseException.class})
+    @ExceptionHandler({
+        ModelVersionConflictException.class, 
+        com.umlcase.application.exception.CommandIdReuseException.class,
+        org.springframework.dao.OptimisticLockingFailureException.class,
+        jakarta.persistence.OptimisticLockException.class
+    })
     public ResponseEntity<?> handleModelVersionConflict(RuntimeException ex) {
         String code = ex instanceof com.umlcase.application.exception.CommandIdReuseException ? "COMMAND_ID_REUSE" : "MODEL_VERSION_CONFLICT";
         return ResponseEntity.status(HttpStatus.CONFLICT)

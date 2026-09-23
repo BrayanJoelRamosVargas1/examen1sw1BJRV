@@ -23,9 +23,12 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import org.springframework.test.annotation.DirtiesContext;
+
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class AddAttributeIdempotencyIT {
 
     @Container
@@ -36,6 +39,10 @@ class AddAttributeIdempotencyIT {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.PostgreSQLDialect");
+        registry.add("spring.flyway.enabled", () -> "true");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
     }
 
     @Autowired
@@ -46,6 +53,7 @@ class AddAttributeIdempotencyIT {
 
     private UUID projectId;
     private UUID classId;
+    private Long initialVersion;
 
     @BeforeEach
     void setUp() {
@@ -55,16 +63,17 @@ class AddAttributeIdempotencyIT {
         UmlModel saved = repository.save(model);
         projectId = saved.getProjectId();
         classId = cls.getId();
+        initialVersion = saved.getVersion();
     }
 
     @Test
     void shouldReturnSameResultOnIdempotentRetry() {
         UUID commandId = UUID.randomUUID();
-        UmlCommand.AddAttribute command = new UmlCommand.AddAttribute(commandId, projectId, "user1", 0L, classId, "name", "String", Visibility.PRIVATE);
+        UmlCommand.AddAttribute command = new UmlCommand.AddAttribute(commandId, projectId, "user1", initialVersion, classId, "name", "String", Visibility.PRIVATE);
         
         AddAttributeResponse response1 = handler.handle(command);
         assertThat(response1.attribute().name()).isEqualTo("name");
-        assertThat(response1.modelVersion()).isEqualTo(1L);
+        assertThat(response1.modelVersion()).isEqualTo(initialVersion + 1L);
 
         // Retry exactly same
         AddAttributeResponse response2 = handler.handle(command);
@@ -77,16 +86,16 @@ class AddAttributeIdempotencyIT {
         UmlModel model = repository.findByProjectId(projectId).orElseThrow();
         UmlClass cls = model.getClasses().stream().filter(c -> c.getId().equals(classId)).findFirst().orElseThrow();
         assertThat(cls.getAttributes()).hasSize(1);
-        assertThat(model.getVersion()).isEqualTo(1L);
+        assertThat(model.getVersion()).isEqualTo(initialVersion + 1L);
     }
 
     @Test
     void shouldThrowOnCommandIdReuseWithDifferentPayload() {
         UUID commandId = UUID.randomUUID();
-        UmlCommand.AddAttribute command1 = new UmlCommand.AddAttribute(commandId, projectId, "user1", 0L, classId, "name", "String", Visibility.PRIVATE);
+        UmlCommand.AddAttribute command1 = new UmlCommand.AddAttribute(commandId, projectId, "user1", initialVersion, classId, "name", "String", Visibility.PRIVATE);
         handler.handle(command1);
 
-        UmlCommand.AddAttribute command2 = new UmlCommand.AddAttribute(commandId, projectId, "user1", 0L, classId, "age", "Integer", Visibility.PRIVATE);
+        UmlCommand.AddAttribute command2 = new UmlCommand.AddAttribute(commandId, projectId, "user1", initialVersion, classId, "age", "Integer", Visibility.PRIVATE);
         
         assertThatThrownBy(() -> handler.handle(command2))
                 .isInstanceOf(CommandIdReuseException.class)

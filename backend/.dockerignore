@@ -1,0 +1,8 @@
+target
+!mvnw
+!mvnw.cmd
+.git
+.idea
+.vscode
+.env*
+logs
