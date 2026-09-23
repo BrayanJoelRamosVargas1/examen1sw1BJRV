@@ -26,6 +26,45 @@
     ⚠ {{ errorMessage }}
   </div>
 
+  <!-- Voice Modeling section -->
+  <section class="create-section voice-section">
+    <button class="voice-btn" 
+            (click)="toggleVoice()" 
+            [disabled]="!isVoiceSupported || wsStatus !== 'connected'"
+            [class.listening]="isListening">
+      🎤 {{ isListening ? 'Escuchando...' : 'Modelar por voz' }}
+    </button>
+    
+    <span class="voice-status" *ngIf="!isVoiceSupported">
+      (Reconocimiento de voz no disponible en este navegador)
+    </span>
+    
+    <div class="voice-transcript-box" *ngIf="voiceTranscript || voiceError || voiceCommandPreview">
+      <div class="transcript-text" *ngIf="voiceTranscript">
+        <em>"{{ voiceTranscript }}"</em>
+      </div>
+      <div class="voice-error" *ngIf="voiceError">
+        ⚠ Error de voz: {{ voiceError }}
+      </div>
+      
+      <div class="command-preview" *ngIf="voiceCommandPreview">
+        <hr/>
+        <strong>Acción:</strong> {{ getVoiceActionName(voiceCommandPreview.type) }}<br/>
+        <span *ngIf="voiceCommandPreview.className"><strong>Clase:</strong> {{ voiceCommandPreview.className }}<br/></span>
+        <span *ngIf="voiceCommandPreview.newClassName"><strong>Nuevo nombre:</strong> {{ voiceCommandPreview.newClassName }}<br/></span>
+        <span *ngIf="voiceCommandPreview.attributeName"><strong>Atributo:</strong> {{ voiceCommandPreview.attributeName }} ({{ voiceCommandPreview.attributeType }})<br/></span>
+        <span *ngIf="voiceCommandPreview.operationName"><strong>Operación:</strong> {{ voiceCommandPreview.operationName }}<br/></span>
+        <span *ngIf="voiceCommandPreview.sourceClass"><strong>Origen:</strong> {{ voiceCommandPreview.sourceClass }} <span *ngIf="voiceCommandPreview.sourceMultiplicity">({{voiceCommandPreview.sourceMultiplicity}})</span><br/></span>
+        <span *ngIf="voiceCommandPreview.targetClass"><strong>Destino:</strong> {{ voiceCommandPreview.targetClass }} <span *ngIf="voiceCommandPreview.targetMultiplicity">({{voiceCommandPreview.targetMultiplicity}})</span><br/></span>
+        
+        <div class="command-actions">
+          <button class="execute-btn" (click)="executeVoiceCommand()">Ejecutar</button>
+          <button class="cancel-btn" (click)="cancelVoiceCommand()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Crear clase -->
   <section class="create-section">
     <input

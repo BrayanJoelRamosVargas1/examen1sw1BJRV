@@ -5,6 +5,8 @@ import { Subscription } from 'rxjs';
 import { UmlService, UmlClassDto } from './services/uml.service';
 import { UmlWebSocketService, ClassCreatedEvent, ClassRenamedEvent, UmlEvent, WsStatus, AttributeUpdatedEvent, OperationAddedEvent, OperationRemovedEvent, DiagramEvent } from './services/uml-websocket.service';
 import { v4 as uuidv4 } from 'uuid';
+import { VoiceCommandParser, VoiceCommand, VoiceCommandType } from './services/voice/voice-command-parser';
+import { SpeechRecognitionService } from './services/voice/speech-recognition.service';
 
 // UUID del proyecto temporal de desarrollo (Fase 1)
 const PROJECT_ID = '00000000-0000-0000-0000-000000000001';
@@ -30,6 +32,13 @@ export class AppComponent implements OnInit, OnDestroy {
   newRelType = 'ASSOCIATION';
   errorMessage = '';
 
+  isVoiceSupported = false;
+  isListening = false;
+  voiceTranscript = '';
+  voiceError = '';
+  voiceCommandPreview: VoiceCommand | null = null;
+  private voiceParser = new VoiceCommandParser();
+
   // Buffer de eventos que llegan antes de que el GET snapshot termine
   private eventBuffer: UmlEvent[] = [];
   private snapshotLoaded = false;
@@ -53,7 +62,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(
     private umlService: UmlService,
-    private wsService: UmlWebSocketService
+    private wsService: UmlWebSocketService,
+    private speechService: SpeechRecognitionService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -64,6 +74,21 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.wsService.status$.subscribe(status => {
       this.wsStatus = status;
+    });
+
+    this.isVoiceSupported = this.speechService.isSupported;
+    this.speechService.getResults().subscribe(res => {
+      this.voiceTranscript = res.transcript;
+      this.voiceError = '';
+      if (res.isFinal) {
+        this.processVoiceTranscript(res.transcript);
+        this.isListening = false;
+      }
+    });
+
+    this.speechService.getErrors().subscribe(err => {
+      this.voiceError = err;
+      this.isListening = false;
     });
 
     // Bufferizar eventos que lleguen antes de que el GET termine
@@ -1141,5 +1166,235 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Resetear input
     event.target.value = '';
+  }
+
+  // --- Voice Modeling ---
+
+  toggleVoice(): void {
+    if (this.isListening) {
+      this.speechService.stopListening();
+    } else {
+      this.voiceTranscript = '';
+      this.voiceError = '';
+      this.voiceCommandPreview = null;
+      this.speechService.startListening();
+    }
+  }
+
+  processVoiceTranscript(transcript: string): void {
+    const cmd = this.voiceParser.parse(transcript);
+    this.voiceCommandPreview = cmd;
+    if (cmd.type === VoiceCommandType.UNKNOWN) {
+      this.voiceError = cmd.error || 'Comando no reconocido';
+    } else {
+      this.voiceError = '';
+    }
+  }
+
+  getVoiceActionName(type: VoiceCommandType): string {
+    switch (type) {
+      case VoiceCommandType.CREATE_CLASS: return 'Crear clase';
+      case VoiceCommandType.RENAME_CLASS: return 'Renombrar clase';
+      case VoiceCommandType.ADD_ATTRIBUTE: return 'Añadir atributo';
+      case VoiceCommandType.ADD_OPERATION: return 'Añadir operación';
+      case VoiceCommandType.REMOVE_CLASS: return 'Eliminar clase';
+      case VoiceCommandType.ADD_RELATIONSHIP: return 'Añadir relación';
+      default: return 'Desconocida';
+    }
+  }
+
+  cancelVoiceCommand(): void {
+    this.voiceCommandPreview = null;
+    this.voiceTranscript = '';
+    this.voiceError = '';
+  }
+
+  executeVoiceCommand(): void {
+    if (!this.voiceCommandPreview) return;
+    const cmd = this.voiceCommandPreview;
+    
+    // Resolve classes case-insensitive exact match
+    const resolveClass = (name?: string) => {
+      if (!name) return null;
+      const lower = name.toLowerCase();
+      const matched = this.classes.filter(c => c.name.toLowerCase() === lower);
+      if (matched.length === 1) return matched[0];
+      if (matched.length > 1) {
+        this.voiceError = `Ambigüedad: hay múltiples clases llamadas "${name}".`;
+        return undefined;
+      }
+      this.voiceError = `Clase "${name}" no encontrada.`;
+      return undefined;
+    };
+
+    switch (cmd.type) {
+      case VoiceCommandType.CREATE_CLASS:
+        this.newClassName = cmd.className!;
+        this.createClass();
+        break;
+
+      case VoiceCommandType.RENAME_CLASS:
+        const clsToRename = resolveClass(cmd.className);
+        if (clsToRename) {
+          // Reutilizamos el handler, pero adaptando para no usar prompt.
+          // Como renameClass actual usa prompt, abstraemos la lógica.
+          this.executeRenameClass(clsToRename, cmd.newClassName!);
+        } else if (clsToRename === undefined) return;
+        break;
+
+      case VoiceCommandType.REMOVE_CLASS:
+        this.voiceError = 'Operación de eliminar clase aún no implementada en UI manual (esperando refactor).';
+        return;
+
+      case VoiceCommandType.ADD_ATTRIBUTE:
+        const clsAttr = resolveClass(cmd.className);
+        if (clsAttr) {
+          this.executeAddAttribute(clsAttr, cmd.attributeName!, cmd.attributeType!);
+        } else if (clsAttr === undefined) return;
+        break;
+
+      case VoiceCommandType.ADD_OPERATION:
+        const clsOp = resolveClass(cmd.className);
+        if (clsOp) {
+          this.executeAddOperation(clsOp, cmd.operationName!);
+        } else if (clsOp === undefined) return;
+        break;
+
+      case VoiceCommandType.ADD_RELATIONSHIP:
+        const source = resolveClass(cmd.sourceClass);
+        if (source === undefined) return;
+        const target = resolveClass(cmd.targetClass);
+        if (target === undefined) return;
+        if (source && target) {
+          this.executeAddRelationship(
+            source.id,
+            target.id,
+            cmd.relationshipType!,
+            cmd.sourceMultiplicity || '',
+            cmd.targetMultiplicity || ''
+          );
+        }
+        break;
+    }
+
+    this.cancelVoiceCommand();
+  }
+
+  private executeRenameClass(cls: UmlClassDto, newName: string): void {
+    this.umlService.renameClass(this.projectId, cls.id, {
+      commandId: uuidv4(),
+      participantId: 'browser-A',
+      expectedVersion: this.currentVersion,
+      newName: newName
+    }).subscribe({
+      next: (response) => {
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) return;
+        this.currentVersion = response.modelVersion;
+        this.upsertClass({ id: response.classId, name: response.newName, attributes: cls.attributes, operations: cls.operations });
+      },
+      error: (err) => {
+        if (err.status === 409) this.loadModel();
+        else this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+      }
+    });
+  }
+
+  private executeAddAttribute(cls: UmlClassDto, attrName: string, attrType: string): void {
+    this.umlService.addAttribute(this.projectId, cls.id, {
+      commandId: uuidv4(),
+      participantId: 'browser-A',
+      expectedVersion: this.currentVersion,
+      attributeName: attrName,
+      attributeType: attrType,
+      visibility: 'PRIVATE'
+    }).subscribe({
+      next: (response) => {
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) return;
+        cls.attributes = cls.attributes || [];
+        if (!cls.attributes.some(a => a.id === response.attribute.id)) {
+            cls.attributes.push(response.attribute);
+        }
+        this.upsertClass(cls);
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+      },
+      error: (err) => {
+        if (err.status === 409) this.loadModel();
+        else this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+      }
+    });
+  }
+
+  private executeAddOperation(cls: UmlClassDto, opName: string): void {
+    this.umlService.addOperation(this.projectId, cls.id, {
+      commandId: uuidv4(),
+      participantId: 'browser-A',
+      expectedVersion: this.currentVersion,
+      name: opName,
+      returnType: 'void',
+      visibility: 'PUBLIC',
+      parameters: []
+    }).subscribe({
+      next: (response) => {
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) return;
+        cls.operations = cls.operations || [];
+        if (!cls.operations.some(o => o.id === response.operationId)) {
+            cls.operations.push({
+              id: response.operationId,
+              name: response.name,
+              returnType: response.returnType,
+              visibility: response.visibility,
+              orderIndex: response.orderIndex,
+              parameters: response.parameters
+            });
+        }
+        this.upsertClass(cls);
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+      },
+      error: (err) => {
+        if (err.status === 409) this.loadModel();
+        else this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+      }
+    });
+  }
+
+  private executeAddRelationship(sourceId: string, targetId: string, type: string, sourceMult: string, targetMult: string): void {
+    this.umlService.addRelationship(this.projectId, {
+      commandId: uuidv4(),
+      participantId: 'browser-A',
+      expectedVersion: this.currentVersion,
+      type: type,
+      sourceClassId: sourceId,
+      targetClassId: targetId,
+      sourceMultiplicity: sourceMult,
+      targetMultiplicity: targetMult
+    }).subscribe({
+      next: (response) => {
+        if (!Number.isSafeInteger(response.modelVersion) || response.modelVersion > this.currentVersion + 1) {
+          this.loadModel();
+          return;
+        }
+        if (response.modelVersion < this.currentVersion) return;
+        if (!this.relationships.some(r => r.id === response.relationshipId)) {
+          this.relationships.push(response.relationship);
+        }
+        this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+      },
+      error: (err) => {
+        if (err.status === 409) this.loadModel();
+        else this.errorMessage = 'Error: ' + (err.error?.error || err.message);
+      }
+    });
   }
 }
