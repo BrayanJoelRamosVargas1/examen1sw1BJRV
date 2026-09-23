@@ -408,6 +408,10 @@ export class AppComponent implements OnInit, OnDestroy {
         this.eventLog.unshift(`RELATIONSHIP_REMOVED v${e.modelVersion}`);
         this.currentVersion = e.modelVersion;
       }
+    } else if ('eventType' in event && event.eventType === 'MODEL_IMPORTED') {
+      this.eventLog.unshift(`MODEL_IMPORTED v${event.modelVersion}`);
+      this.loadModel();
+      return;
     } else {
       this.loadModel();
       return;
@@ -1073,5 +1077,37 @@ export class AppComponent implements OnInit, OnDestroy {
         this.errorMessage = 'Error exportando XMI: ' + (err.error?.error || err.message);
       }
     });
+  }
+
+  onFileSelected(event: any): void {
+    const file: File = event.target.files[0];
+    if (!file) return;
+
+    this.errorMessage = '';
+    
+    this.umlService.importXmi(
+      this.projectId,
+      file,
+      uuidv4(),
+      'browser-A',
+      this.currentVersion
+    ).subscribe({
+      next: () => {
+        // La actualización vendrá vía WebSocket con MODEL_IMPORTED
+        // Opcionalmente podemos forzar una recarga aquí:
+        this.loadModel();
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.errorMessage = 'Conflicto de versión detectado. Resincronizando estado automáticamente...';
+          this.loadModel();
+        } else {
+          this.errorMessage = 'Error importando XMI: ' + (err.error?.error || err.message);
+        }
+      }
+    });
+
+    // Resetear input
+    event.target.value = '';
   }
 }

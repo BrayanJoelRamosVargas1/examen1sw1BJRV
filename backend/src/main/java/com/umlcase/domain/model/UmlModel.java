@@ -188,6 +188,14 @@ public final class UmlModel {
                 .findFirst();
     }
 
+    /** Reemplaza todo el contenido del modelo actual con el importado. */
+    public void replaceWith(UmlModel importedModel) {
+        this.classes.clear();
+        this.relationships.clear();
+        this.classes.addAll(importedModel.getClasses());
+        this.relationships.addAll(importedModel.getRelationships());
+    }
+
     // ─── Getters ──────────────────────────────────────────────────────────────
 
     public UUID getId()        { return id; }

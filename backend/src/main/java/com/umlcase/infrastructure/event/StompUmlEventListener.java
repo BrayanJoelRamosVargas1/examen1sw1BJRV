@@ -80,4 +80,18 @@ public class StompUmlEventListener {
         String destination = "/topic/projects/" + event.projectId();
         messagingTemplate.convertAndSend(destination, event);
     }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleModelImportedEvent(com.umlcase.application.event.ModelImportedEvent event) {
+        String destination = "/topic/projects/" + event.projectId();
+        // Agregamos un field eventType explícito para el payload STOMP, si el frontend lo requiere para discriminar.
+        // Spring convierte los records a JSON directamente.
+        messagingTemplate.convertAndSend(destination, new Object() {
+            public final String eventType = "MODEL_IMPORTED";
+            public final String commandId = event.commandId();
+            public final String participantId = event.participantId();
+            public final java.util.UUID projectId = event.projectId();
+            public final int modelVersion = event.modelVersion();
+        });
+    }
 }

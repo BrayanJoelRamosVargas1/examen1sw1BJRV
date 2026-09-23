@@ -144,6 +144,12 @@ export interface RelationshipRemovedEvent {
   modelVersion: number;
 }
 
+export interface ModelImportedEvent {
+  eventType: 'MODEL_IMPORTED';
+  projectId: string;
+  modelVersion: number;
+}
+
 export type UmlEvent =
   | ClassCreatedEvent
   | ClassRenamedEvent
@@ -155,7 +161,8 @@ export type UmlEvent =
   | OperationRemovedEvent
   | RelationshipAddedEvent
   | RelationshipUpdatedEvent
-  | RelationshipRemovedEvent;
+  | RelationshipRemovedEvent
+  | ModelImportedEvent;
 
 export type DiagramEvent = NodeMovedEvent;
 

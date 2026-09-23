@@ -20,4 +20,26 @@ public class XmiIdMapper {
         }
         return EA_PREFIX + internalId.toString();
     }
+
+    /**
+     * Convierte un xmi:id en un UUID interno de manera determinista.
+     * Si el xmi:id tiene el formato EAID_ + UUID, extrae el UUID.
+     * Si no, genera un UUID basado en el hash del string (UUID v3).
+     */
+    public UUID toUuid(String xmiId) {
+        if (xmiId == null || xmiId.isEmpty()) {
+            return UUID.randomUUID();
+        }
+        
+        if (xmiId.startsWith(EA_PREFIX)) {
+            String suffix = xmiId.substring(EA_PREFIX.length());
+            try {
+                return UUID.fromString(suffix);
+            } catch (IllegalArgumentException e) {
+                // No es un UUID válido, generar uno determinista
+            }
+        }
+        
+        return UUID.nameUUIDFromBytes(xmiId.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
 }

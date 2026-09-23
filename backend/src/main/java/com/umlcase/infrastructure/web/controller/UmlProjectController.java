@@ -31,6 +31,7 @@ public class UmlProjectController {
     private final com.umlcase.application.port.in.UpdateRelationshipUseCase updateRelationshipUseCase;
     private final com.umlcase.application.port.in.RemoveRelationshipUseCase removeRelationshipUseCase;
     private final com.umlcase.application.port.in.ExportModelUseCase exportModelUseCase;
+    private final com.umlcase.application.port.in.ImportModelUseCase importModelUseCase;
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
@@ -43,7 +44,8 @@ public class UmlProjectController {
                                 com.umlcase.application.port.in.AddRelationshipUseCase addRelationshipUseCase,
                                 com.umlcase.application.port.in.UpdateRelationshipUseCase updateRelationshipUseCase,
                                 com.umlcase.application.port.in.RemoveRelationshipUseCase removeRelationshipUseCase,
-                                com.umlcase.application.port.in.ExportModelUseCase exportModelUseCase) {
+                                com.umlcase.application.port.in.ExportModelUseCase exportModelUseCase,
+                                com.umlcase.application.port.in.ImportModelUseCase importModelUseCase) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
@@ -56,6 +58,7 @@ public class UmlProjectController {
         this.updateRelationshipUseCase = updateRelationshipUseCase;
         this.removeRelationshipUseCase = removeRelationshipUseCase;
         this.exportModelUseCase = exportModelUseCase;
+        this.importModelUseCase = importModelUseCase;
     }
 
     @GetMapping("/model")
@@ -111,6 +114,38 @@ public class UmlProjectController {
                 .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "application/xml")
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"uml-model.xmi\"")
                 .body(xmiData);
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping(value = "/import/xmi", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<com.umlcase.infrastructure.web.dto.ImportModelResponse> importXmi(
+            @PathVariable UUID projectId,
+            @org.springframework.web.bind.annotation.RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @org.springframework.web.bind.annotation.RequestParam("commandId") String commandId,
+            @org.springframework.web.bind.annotation.RequestParam("participantId") String participantId,
+            @org.springframework.web.bind.annotation.RequestParam("expectedVersion") int expectedVersion) {
+
+        try {
+            com.umlcase.application.port.in.ImportModelCommand command = new com.umlcase.application.port.in.ImportModelCommand(
+                    projectId,
+                    participantId,
+                    commandId,
+                    expectedVersion,
+                    file.getBytes()
+            );
+
+            UmlModel savedModel = importModelUseCase.importModel(command);
+
+            var response = new com.umlcase.infrastructure.web.dto.ImportModelResponse(
+                    commandId,
+                    (int) savedModel.getVersion(),
+                    savedModel.getClasses().size(),
+                    savedModel.getRelationships().size()
+            );
+
+            return ResponseEntity.ok(response);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Error al leer el archivo XMI", e);
+        }
     }
 
     @org.springframework.web.bind.annotation.PatchMapping("/classes/{classId}")

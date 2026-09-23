@@ -382,4 +382,20 @@ export class UmlService {
       responseType: 'blob'
     });
   }
+
+  importXmi(
+    projectId: string,
+    file: File,
+    commandId: string,
+    participantId: string,
+    expectedVersion: number
+  ): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('commandId', commandId);
+    formData.append('participantId', participantId);
+    formData.append('expectedVersion', expectedVersion.toString());
+
+    return this.http.post(`${API}/projects/${projectId}/import/xmi`, formData);
+  }
 }
