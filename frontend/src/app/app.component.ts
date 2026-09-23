@@ -1079,6 +1079,22 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  exportSql(): void {
+    this.umlService.exportSql(this.projectId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'schema.sql';
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        this.errorMessage = 'Error exportando SQL: ' + (err.error?.error || err.message);
+      }
+    });
+  }
+
   onFileSelected(event: any): void {
     const file: File = event.target.files[0];
     if (!file) return;

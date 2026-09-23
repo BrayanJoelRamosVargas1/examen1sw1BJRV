@@ -383,6 +383,12 @@ export class UmlService {
     });
   }
 
+  exportSql(projectId: string): Observable<Blob> {
+    return this.http.get(`${API}/projects/${projectId}/export/sql`, {
+      responseType: 'blob'
+    });
+  }
+
   importXmi(
     projectId: string,
     file: File,
