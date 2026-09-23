@@ -32,8 +32,9 @@ class UmlRealtimeService {
           if (!connected.isCompleted) connected.complete();
         },
         onWebSocketError: (_) {
-          if (!connected.isCompleted)
+          if (!connected.isCompleted) {
             connected.completeError('WebSocket error');
+          }
           onResyncRequired?.call();
         },
       ),
@@ -44,6 +45,14 @@ class UmlRealtimeService {
 
   void _handleMessage(dynamic raw) {
     final payload = jsonDecode(raw as String) as Map<String, dynamic>;
+    _processPayload(payload);
+  }
+
+  /// Exposed for unit tests: inject a decoded payload directly.
+  // ignore: avoid_redundant_argument_values
+  void handleMessageForTest(Map<String, dynamic> payload) => _processPayload(payload);
+
+  void _processPayload(Map<String, dynamic> payload) {
     final version = (payload['modelVersion'] as num?)?.toInt();
     if (version == null || version <= currentVersion) return;
     if (version > currentVersion + 1) {

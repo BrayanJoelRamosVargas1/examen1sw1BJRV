@@ -35,7 +35,10 @@ void main() {
           final body = jsonDecode(request.body) as Map<String, dynamic>;
           expect(body['expectedVersion'], 4);
           expect(body['participantId'], startsWith('mobile-'));
-          return http.Response('{}', 200);
+          return http.Response(
+            jsonEncode({'modelVersion': 5, 'classId': 'c1'}),
+            200,
+          );
         }
         return http.Response(
           jsonEncode({
@@ -82,23 +85,10 @@ void main() {
       onEvent: (_) => events++,
     );
     service.currentVersion = 3;
-    service
-      .._handleTestMessage({'modelVersion': 2})
-      .._handleTestMessage({'modelVersion': 5});
+    service.handleMessageForTest({'modelVersion': 2});
+    service.handleMessageForTest({'modelVersion': 5});
     expect(events, 0);
     expect(resyncs, 1);
   });
 }
 
-extension on UmlRealtimeService {
-  void _handleTestMessage(Map<String, dynamic> payload) {
-    final version = (payload['modelVersion'] as num).toInt();
-    if (version <= currentVersion) return;
-    if (version > currentVersion + 1) {
-      onResyncRequired?.call();
-      return;
-    }
-    currentVersion = version;
-    onEvent?.call(UmlRealtimeEvent(version, payload));
-  }
-}
