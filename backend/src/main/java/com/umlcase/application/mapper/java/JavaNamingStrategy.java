@@ -51,7 +51,26 @@ public class JavaNamingStrategy {
     }
 
     private String normalize(String name) {
-        String s = name.trim().replaceAll("[^a-zA-Z0-9_$]", "");
+        StringBuilder normalized = new StringBuilder();
+        boolean capitalizeNext = false;
+
+        for (char character : name.trim().toCharArray()) {
+            if (character == ' ' || character == '-' || character == '.') {
+                capitalizeNext = true;
+                continue;
+            }
+            if (!Character.isLetterOrDigit(character) && character != '_' && character != '$') {
+                continue;
+            }
+            if (capitalizeNext && normalized.length() > 0) {
+                normalized.append(Character.toUpperCase(character));
+            } else {
+                normalized.append(character);
+            }
+            capitalizeNext = false;
+        }
+
+        String s = normalized.toString();
         if (s.isEmpty()) {
             throw new IllegalArgumentException("El nombre '" + name + "' no contiene caracteres válidos.");
         }

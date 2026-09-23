@@ -43,8 +43,8 @@ class JavaNamingStrategyTest {
     }
 
     @Test
-    void toFieldName_invalidCharacters_areRemoved() {
-        assertThat(naming.toFieldName("mi-campo.nuevo!")).isEqualTo("miCamponuevo");
+    void toFieldName_separatorsCreateCamelCase_andInvalidCharactersAreRemoved() {
+        assertThat(naming.toFieldName("mi-campo.nuevo!")).isEqualTo("miCampoNuevo");
     }
 
     @Test
