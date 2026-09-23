@@ -97,6 +97,21 @@ export class AppComponent implements OnInit, OnDestroy {
     this.umlService.getModel(this.projectId).subscribe({
       next: (model) => {
         if (requestId !== this.snapshotRequestId) return;
+
+        // Proteccion contra GET viejo / stale snapshot:
+        // Si el snapshot que llegó es de una versión inferior a la que ya conocemos,
+        // NO lo aplicamos (evita retroceso). Pero SÍ drenamos el buffer porque
+        // pueden haber llegado eventos válidos (ej: v41) mientras el GET estaba en vuelo.
+        if (model.version < this.currentVersion) {
+          this.snapshotLoaded = true;
+          const bufferedStale = this.eventBuffer;
+          this.eventBuffer = [];
+          for (const bufferedEvent of bufferedStale) {
+            this.applyEvent(bufferedEvent);
+          }
+          return;
+        }
+
         // Renderizar snapshot
         this.currentVersion = model.version;
         this.classes = [...model.classes];

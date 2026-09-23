@@ -251,3 +251,14 @@ pm run build | [OK] |
 | F4.1-03 | GET /model Automático (Auto-Resync sin F5) | `[FASE 4.1]` | E2E Playwright `validate-conflict.js` | `[OK]` |
 | F4.1-04 | Protección STOMP Out-of-Order (salto de versión) | `[FASE 4.1]` | Revisión manual | `[OK]` |
 | F4.1-05 | No Lost Update End-to-End | `[FASE 4.1]` | E2E Playwright `validate-conflict.js` | `[OK]` |
+
+---
+
+## Componentes de Fase 4.2 (Robustez STOMP: Duplicados, Stale, Gaps)
+
+| ID | Componente | Estado | Prueba | Evidencia |
+|---|---|---|---|---|
+| F4.2-01 | Política Sequence: IGNORE duplicados/stale STOMP | `[FASE 4.2]` | `app.component.spec.ts` | `[OK]` |
+| F4.2-02 | Política Sequence: GAP detectado → GET /model | `[FASE 4.2]` | `app.component.spec.ts` / E2E | `[OK]` |
+| F4.2-03 | Protección GET /model stale + eventBuffer drain | `[FASE 4.2]` | `app.component.spec.ts` | `[OK]` |
+| F4.2-04 | End-to-End GAP Auto-Resync | `[FASE 4.2]` | E2E Playwright `e2e-gap-test.js` | `[OK]` |
