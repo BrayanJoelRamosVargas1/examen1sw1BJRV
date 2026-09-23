@@ -41,6 +41,10 @@ export class AppComponent implements OnInit, OnDestroy {
   aiCommandsPreview: import('./services/uml.service').InterpretedUmlCommand[] = [];
   isProcessingAi = false;
   isExecutingAiBatch = false;
+  imagePreview = '';
+  imageWarnings: string[] = [];
+  imageError = '';
+  isProcessingImage = false;
   private voiceParser = new VoiceCommandParser();
 
   // Buffer de eventos que llegan antes de que el GET snapshot termine
@@ -1221,6 +1225,45 @@ export class AppComponent implements OnInit, OnDestroy {
     this.processVoiceTranscript(this.naturalLanguageText);
   }
 
+  onUmlImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    this.imageError = '';
+    this.imageWarnings = [];
+    this.imagePreview = '';
+    this.aiCommandsPreview = [];
+    if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      this.imageError = 'Formato no permitido. Usa PNG, JPEG o WebP.';
+      input.value = '';
+      return;
+    }
+    if (file.size === 0 || file.size > 8 * 1024 * 1024) {
+      this.imageError = 'La imagen debe tener contenido y pesar como máximo 8 MB.';
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => this.imagePreview = String(reader.result || '');
+    reader.readAsDataURL(file);
+    this.isProcessingImage = true;
+    this.umlService.interpretUmlImage(this.projectId, file).subscribe({
+      next: result => {
+        this.isProcessingImage = false;
+        this.aiCommandsPreview = result.commands || [];
+        this.imageWarnings = result.warnings || [];
+        if (this.aiCommandsPreview.length === 0 && this.imageWarnings.length === 0) {
+          this.imageError = 'No se detectaron comandos UML.';
+        }
+      },
+      error: err => {
+        this.isProcessingImage = false;
+        this.imageError = 'Error analizando imagen: ' + (err.error?.error || err.message);
+      }
+    });
+  }
+
   getVoiceActionName(type: VoiceCommandType): string {
     switch (type) {
       case VoiceCommandType.CREATE_CLASS: return 'Crear clase';
@@ -1238,6 +1281,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.aiCommandsPreview = [];
     this.voiceTranscript = '';
     this.voiceError = '';
+    this.imagePreview = '';
+    this.imageWarnings = [];
+    this.imageError = '';
+    this.isProcessingImage = false;
   }
 
   getAiActionName(type: string): string {

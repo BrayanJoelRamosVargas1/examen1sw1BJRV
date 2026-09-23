@@ -35,6 +35,7 @@ public class UmlProjectController {
     private final com.umlcase.application.port.in.GenerateRelationalSchemaUseCase generateRelationalSchemaUseCase;
     private final com.umlcase.application.port.out.RelationalSchemaExporter relationalSchemaExporter;
     private final com.umlcase.application.ai.InterpretNaturalLanguageCommandUseCase interpretNaturalLanguageCommandUseCase;
+        private final com.umlcase.application.ai.InterpretUmlImageUseCase interpretUmlImageUseCase;
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
@@ -51,7 +52,8 @@ public class UmlProjectController {
                                 com.umlcase.application.port.in.ImportModelUseCase importModelUseCase,
                                 com.umlcase.application.port.in.GenerateRelationalSchemaUseCase generateRelationalSchemaUseCase,
                                 com.umlcase.application.port.out.RelationalSchemaExporter relationalSchemaExporter,
-                                com.umlcase.application.ai.InterpretNaturalLanguageCommandUseCase interpretNaturalLanguageCommandUseCase) {
+                                com.umlcase.application.ai.InterpretNaturalLanguageCommandUseCase interpretNaturalLanguageCommandUseCase,
+                                com.umlcase.application.ai.InterpretUmlImageUseCase interpretUmlImageUseCase) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
@@ -68,6 +70,7 @@ public class UmlProjectController {
         this.generateRelationalSchemaUseCase = generateRelationalSchemaUseCase;
         this.relationalSchemaExporter = relationalSchemaExporter;
         this.interpretNaturalLanguageCommandUseCase = interpretNaturalLanguageCommandUseCase;
+        this.interpretUmlImageUseCase = interpretUmlImageUseCase;
     }
 
     @GetMapping("/model")
@@ -483,4 +486,24 @@ public class UmlProjectController {
             @org.springframework.web.bind.annotation.RequestBody AiInterpretRequest request) {
         return interpretNaturalLanguageCommandUseCase.execute(projectId, request.getText());
     }
+
+        public record AiImageInterpretResponse(
+                        List<com.umlcase.application.ai.InterpretedUmlCommand> commands,
+                        List<String> warnings) {}
+
+        @org.springframework.web.bind.annotation.PostMapping(
+                        value = "/ai/interpret-image",
+                        consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+        public AiImageInterpretResponse interpretImage(
+                        @PathVariable java.util.UUID projectId,
+                        @org.springframework.web.bind.annotation.RequestParam("file") org.springframework.web.multipart.MultipartFile file)
+                        throws java.io.IOException {
+                return mapImageInterpretation(interpretUmlImageUseCase.execute(
+                                projectId, file.getBytes(), file.getContentType()));
+        }
+
+        private AiImageInterpretResponse mapImageInterpretation(
+                        com.umlcase.application.ai.UmlImageInterpretation interpretation) {
+                return new AiImageInterpretResponse(interpretation.commands(), interpretation.warnings());
+        }
 }

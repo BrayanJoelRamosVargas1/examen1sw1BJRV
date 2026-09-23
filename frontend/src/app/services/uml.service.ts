@@ -236,6 +236,11 @@ export interface InterpretedUmlCommand {
   targetMultiplicity?: string;
 }
 
+export interface UmlImageInterpretation {
+  commands: InterpretedUmlCommand[];
+  warnings: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class UmlService {
   constructor(private http: HttpClient) {}
@@ -429,6 +434,14 @@ export class UmlService {
     return this.http.post<InterpretedUmlCommand[]>(
       `${API}/projects/${projectId}/ai/interpret`,
       { text }
+    );
+  }
+
+  interpretUmlImage(projectId: string, file: File): Observable<UmlImageInterpretation> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<UmlImageInterpretation>(
+      `${API}/projects/${projectId}/ai/interpret-image`, formData
     );
   }
 }

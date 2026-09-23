@@ -103,6 +103,25 @@
       </div>
   </section>
 
+  <section class="create-section image-section">
+    <label for="uml-image-input">Importar foto UML</label>
+    <input
+      id="uml-image-input"
+      type="file"
+      accept="image/png,image/jpeg,image/webp"
+      (change)="onUmlImageSelected($event)"
+      [disabled]="wsStatus !== 'connected' || isProcessingImage || isExecutingAiBatch"
+    />
+    <div class="image-analysis" *ngIf="imagePreview || imageError || imageWarnings.length > 0 || isProcessingImage">
+      <img *ngIf="imagePreview" [src]="imagePreview" alt="Vista previa del diagrama UML" />
+      <div class="voice-status" *ngIf="isProcessingImage">Analizando imagen...</div>
+      <div class="voice-error" *ngIf="imageError">{{ imageError }}</div>
+      <ul *ngIf="imageWarnings.length > 0">
+        <li *ngFor="let warning of imageWarnings">{{ warning }}</li>
+      </ul>
+    </div>
+  </section>
+
   <!-- Crear clase -->
   <section class="create-section">
     <input

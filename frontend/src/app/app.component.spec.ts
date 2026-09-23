@@ -43,7 +43,7 @@ describe('AppComponent (Robustez STOMP)', () => {
   beforeEach(async () => {
     umlServiceSpy = jasmine.createSpyObj('UmlService', [
       'getModel', 'getDiagram', 'renameClass', 'interpretNaturalLanguage',
-      'createClass', 'addAttribute', 'addOperation', 'addRelationship'
+      'interpretUmlImage', 'createClass', 'addAttribute', 'addOperation', 'addRelationship'
     ]);
 
     eventsSubject = new Subject();
@@ -363,5 +363,47 @@ describe('AppComponent (Robustez STOMP)', () => {
 
     app.processVoiceTranscript('crear clase Producto');
     expect(app.voiceCommandPreview?.type).toBe(VoiceCommandType.CREATE_CLASS);
+  });
+
+  it('rejects an invalid image before making an HTTP request', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    const file = new File(['not an image'], 'diagram.svg', { type: 'image/svg+xml' });
+
+    app.onUmlImageSelected({ target: { files: [file] } } as any);
+
+    expect(app.imageError).toContain('Formato no permitido');
+    expect(umlServiceSpy.interpretUmlImage).not.toHaveBeenCalled();
+  });
+
+  it('uploads a valid image and shows command preview plus warnings', fakeAsync(() => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    umlServiceSpy.interpretUmlImage.and.returnValue(of({
+      commands: [{ type: 'CREATE_CLASS', className: 'Cliente' }],
+      warnings: ['Multiplicidad no legible']
+    }));
+    const file = new File(['png'], 'diagram.png', { type: 'image/png' });
+
+    app.onUmlImageSelected({ target: { files: [file] } } as any);
+    tick();
+
+    expect(umlServiceSpy.interpretUmlImage).toHaveBeenCalledWith(app.projectId, file);
+    expect(app.aiCommandsPreview[0].className).toBe('Cliente');
+    expect(app.imageWarnings).toEqual(['Multiplicidad no legible']);
+    expect(app.isProcessingImage).toBeFalse();
+  }));
+
+  it('cancelling image preview clears commands without mutating the model', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    app.imagePreview = 'data:image/png;base64,fixture';
+    app.aiCommandsPreview = [{ type: 'CREATE_CLASS', className: 'Cliente' }];
+
+    app.cancelVoiceCommand();
+
+    expect(app.imagePreview).toBe('');
+    expect(app.aiCommandsPreview).toEqual([]);
+    expect(umlServiceSpy.createClass).not.toHaveBeenCalled();
   });
 });
