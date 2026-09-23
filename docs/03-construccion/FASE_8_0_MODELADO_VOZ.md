@@ -27,8 +27,9 @@ Añadir una interfaz de entrada basada en voz para el modelo UML, permitiendo cr
 - **Renombrar Clase**: "renombrar clase [Viejo] a [Nuevo]"
 - **Atributos**: "agregar atributo [Nombre] tipo [Tipo] a [Clase]"
 - **Operaciones**: "agregar operación [Nombre] a [Clase]"
-- **Eliminar Clase**: "eliminar clase [Nombre]" (Parcialmente manejado a nivel parser).
 - **Relaciones**: "crear asociación|composición|agregación|generalización de [Origen] a [Destino]" con soporte opcional para multiplicidades como "uno", "muchos", "cero a muchos", "uno a muchos", "cero o uno".
+
+`REMOVE_CLASS` puede ser reconocido por el parser, pero su ejecución permanece pendiente porque el core todavía no expone ese caso de uso. No se documenta como operación disponible.
 
 ## Prevención de Errores
 - La transcripción se muestra siempre.
@@ -40,4 +41,4 @@ Añadir una interfaz de entrada basada en voz para el modelo UML, permitiendo cr
 Dado que la Web Speech API requiere permiso de micrófono e interacción del usuario en un entorno de navegador compatible (Chrome/Edge), se incluyen:
 1. **Unit tests (`voice-command-parser.spec.ts`)**: Prueban todas las combinaciones de gramática independientemente del navegador.
 2. **Unit tests (`speech-recognition.service.spec.ts`)**: Validan el ciclo de vida de la API nativa y el control de errores usando mocks.
-3. **Validación real**: Requiere lanzar `npm start` en un navegador, dar permisos de micrófono y comprobar cómo la transcripción fluye por el backend hacia los suscriptores STOMP.
+3. **Validación real**: [PENDIENTE DEMO MANUAL CON MICRÓFONO REAL]. Los tests automáticos con mocks no prueban físicamente el micrófono.

@@ -28,6 +28,23 @@
 
   <!-- Voice Modeling section -->
   <section class="create-section voice-section">
+    <div class="natural-language-input">
+      <input
+        type="text"
+        [(ngModel)]="naturalLanguageText"
+        placeholder="Describe el modelo..."
+        (keyup.enter)="interpretNaturalLanguageText()"
+        [disabled]="wsStatus !== 'connected' || isProcessingAi"
+      />
+      <button
+        type="button"
+        class="execute-btn"
+        (click)="interpretNaturalLanguageText()"
+        [disabled]="!naturalLanguageText.trim() || wsStatus !== 'connected' || isProcessingAi"
+      >
+        Interpretar
+      </button>
+    </div>
     <button class="voice-btn" 
             (click)="toggleVoice()" 
             [disabled]="!isVoiceSupported || wsStatus !== 'connected'"
@@ -38,17 +55,20 @@
     <span class="voice-status" *ngIf="!isVoiceSupported">
       (Reconocimiento de voz no disponible en este navegador)
     </span>
-    
-    <div class="voice-transcript-box" *ngIf="voiceTranscript || voiceError || voiceCommandPreview">
-      <div class="transcript-text" *ngIf="voiceTranscript">
-        <em>"{{ voiceTranscript }}"</em>
-      </div>
-      <div class="voice-error" *ngIf="voiceError">
-        ⚠ Error de voz: {{ voiceError }}
-      </div>
-      
-      <div class="command-preview" *ngIf="voiceCommandPreview">
+        <div class="voice-transcript-box" *ngIf="voiceTranscript || voiceError || voiceCommandPreview || aiCommandsPreview.length > 0 || isProcessingAi">
+        <div class="transcript-text" *ngIf="voiceTranscript">
+          <em>"{{ voiceTranscript }}"</em>
+        </div>
+        <div class="voice-error" *ngIf="voiceError">
+          🚫 Error de voz: {{ voiceError }}
+        </div>
+        <div class="voice-status" *ngIf="isProcessingAi">
+          ⏳ Procesando con Inteligencia Artificial...
+        </div>
+
+        <div class="command-preview" *ngIf="voiceCommandPreview">
         <hr/>
+        <strong>Interpretado por reglas</strong><br/>
         <strong>Acción:</strong> {{ getVoiceActionName(voiceCommandPreview.type) }}<br/>
         <span *ngIf="voiceCommandPreview.className"><strong>Clase:</strong> {{ voiceCommandPreview.className }}<br/></span>
         <span *ngIf="voiceCommandPreview.newClassName"><strong>Nuevo nombre:</strong> {{ voiceCommandPreview.newClassName }}<br/></span>
@@ -56,13 +76,31 @@
         <span *ngIf="voiceCommandPreview.operationName"><strong>Operación:</strong> {{ voiceCommandPreview.operationName }}<br/></span>
         <span *ngIf="voiceCommandPreview.sourceClass"><strong>Origen:</strong> {{ voiceCommandPreview.sourceClass }} <span *ngIf="voiceCommandPreview.sourceMultiplicity">({{voiceCommandPreview.sourceMultiplicity}})</span><br/></span>
         <span *ngIf="voiceCommandPreview.targetClass"><strong>Destino:</strong> {{ voiceCommandPreview.targetClass }} <span *ngIf="voiceCommandPreview.targetMultiplicity">({{voiceCommandPreview.targetMultiplicity}})</span><br/></span>
-        
-        <div class="command-actions">
-          <button class="execute-btn" (click)="executeVoiceCommand()">Ejecutar</button>
-          <button class="cancel-btn" (click)="cancelVoiceCommand()">Cancelar</button>
+                <div class="command-actions">
+            <button class="execute-btn" (click)="executeVoiceCommand()" [disabled]="isExecutingAiBatch">Ejecutar</button>
+            <button class="cancel-btn" (click)="cancelVoiceCommand()" [disabled]="isExecutingAiBatch">Cancelar</button>
+          </div>
+        </div>
+
+        <div class="command-preview" *ngIf="aiCommandsPreview.length > 0">
+          <hr/>
+          <strong>Interpretado por IA</strong>
+          <div *ngFor="let aiCmd of aiCommandsPreview; let i = index" class="ai-cmd-item">
+            {{ i + 1 }}. {{ getAiActionName(aiCmd.type) }}
+            <span *ngIf="aiCmd.className"> ({{ aiCmd.className }})</span>
+            <span *ngIf="aiCmd.attributeName"> -> {{ aiCmd.attributeName }}</span>
+            <span *ngIf="aiCmd.operationName"> -> {{ aiCmd.operationName }}()</span>
+            <span *ngIf="aiCmd.sourceClass && aiCmd.targetClass"> [{{ aiCmd.sourceClass }} -> {{ aiCmd.targetClass }}]</span>
+          </div>
+
+          <div class="command-actions">
+            <button class="execute-btn" (click)="executeAiCommandsBatch()" [disabled]="isExecutingAiBatch">
+              {{ isExecutingAiBatch ? 'Ejecutando...' : 'Ejecutar Lote' }}
+            </button>
+            <button class="cancel-btn" (click)="cancelVoiceCommand()" [disabled]="isExecutingAiBatch">Cancelar</button>
+          </div>
         </div>
       </div>
-    </div>
   </section>
 
   <!-- Crear clase -->

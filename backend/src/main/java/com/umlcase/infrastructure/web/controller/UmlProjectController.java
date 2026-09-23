@@ -34,6 +34,7 @@ public class UmlProjectController {
     private final com.umlcase.application.port.in.ImportModelUseCase importModelUseCase;
     private final com.umlcase.application.port.in.GenerateRelationalSchemaUseCase generateRelationalSchemaUseCase;
     private final com.umlcase.application.port.out.RelationalSchemaExporter relationalSchemaExporter;
+    private final com.umlcase.application.ai.InterpretNaturalLanguageCommandUseCase interpretNaturalLanguageCommandUseCase;
 
     public UmlProjectController(UmlModelRepository repository,
                                 com.umlcase.application.handler.RenameClassHandler renameClassHandler,
@@ -49,7 +50,8 @@ public class UmlProjectController {
                                 com.umlcase.application.port.in.ExportModelUseCase exportModelUseCase,
                                 com.umlcase.application.port.in.ImportModelUseCase importModelUseCase,
                                 com.umlcase.application.port.in.GenerateRelationalSchemaUseCase generateRelationalSchemaUseCase,
-                                com.umlcase.application.port.out.RelationalSchemaExporter relationalSchemaExporter) {
+                                com.umlcase.application.port.out.RelationalSchemaExporter relationalSchemaExporter,
+                                com.umlcase.application.ai.InterpretNaturalLanguageCommandUseCase interpretNaturalLanguageCommandUseCase) {
         this.repository = repository;
         this.renameClassHandler = renameClassHandler;
         this.addAttributeHandler = addAttributeHandler;
@@ -65,6 +67,7 @@ public class UmlProjectController {
         this.importModelUseCase = importModelUseCase;
         this.generateRelationalSchemaUseCase = generateRelationalSchemaUseCase;
         this.relationalSchemaExporter = relationalSchemaExporter;
+        this.interpretNaturalLanguageCommandUseCase = interpretNaturalLanguageCommandUseCase;
     }
 
     @GetMapping("/model")
@@ -466,5 +469,18 @@ public class UmlProjectController {
                 .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "text/plain; charset=UTF-8")
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"schema.sql\"")
                 .body(sqlData);
+    }
+
+    public static class AiInterpretRequest {
+        private String text;
+        public String getText() { return text; }
+        public void setText(String text) { this.text = text; }
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/ai/interpret")
+    public List<com.umlcase.application.ai.InterpretedUmlCommand> interpretNaturalLanguage(
+            @PathVariable java.util.UUID projectId,
+            @org.springframework.web.bind.annotation.RequestBody AiInterpretRequest request) {
+        return interpretNaturalLanguageCommandUseCase.execute(projectId, request.getText());
     }
 }

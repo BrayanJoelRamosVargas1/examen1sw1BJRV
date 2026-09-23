@@ -1,11 +1,12 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed, fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 import { UmlService } from './services/uml.service';
 import { UmlWebSocketService, WsStatus, ClassRenamedEvent, DiagramEvent } from './services/uml-websocket.service';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { VoiceCommandType } from './services/voice/voice-command-parser';
 
 /**
  * Crea un evento CLASS_RENAMED simulado con los campos mínimos necesarios.
@@ -40,7 +41,10 @@ describe('AppComponent (Robustez STOMP)', () => {
   let statusSubject: Subject<WsStatus>;
 
   beforeEach(async () => {
-    umlServiceSpy = jasmine.createSpyObj('UmlService', ['getModel', 'getDiagram', 'renameClass']);
+    umlServiceSpy = jasmine.createSpyObj('UmlService', [
+      'getModel', 'getDiagram', 'renameClass', 'interpretNaturalLanguage',
+      'createClass', 'addAttribute', 'addOperation', 'addRelationship'
+    ]);
 
     eventsSubject = new Subject();
     layoutEventsSubject = new Subject();
@@ -262,4 +266,102 @@ describe('AppComponent (Robustez STOMP)', () => {
     expect(app.currentVersion).toBe(51);
     expect(app.classes[0].name).toBe('C1_viaSTOMP');
   }));
+
+  it('uses the deterministic parser without calling AI', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+
+    app.processVoiceTranscript('crear clase Cliente');
+
+    expect(app.voiceCommandPreview?.type).toBe(VoiceCommandType.CREATE_CLASS);
+    expect(umlServiceSpy.interpretNaturalLanguage).not.toHaveBeenCalled();
+  });
+
+  it('calls AI only for an unknown transcript and shows a single-command preview', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    umlServiceSpy.interpretNaturalLanguage.and.returnValue(of([
+      { type: 'CREATE_CLASS', className: 'Cliente' }
+    ]));
+
+    app.processVoiceTranscript('necesito una clase para clientes');
+
+    expect(umlServiceSpy.interpretNaturalLanguage).toHaveBeenCalledWith(
+      app.projectId, 'necesito una clase para clientes'
+    );
+    expect(app.aiCommandsPreview).toEqual([{ type: 'CREATE_CLASS', className: 'Cliente' }]);
+  });
+
+  it('shows a batch preview and cancellation performs no mutations', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    umlServiceSpy.interpretNaturalLanguage.and.returnValue(of([
+      { type: 'CREATE_CLASS', className: 'Cliente' },
+      { type: 'ADD_ATTRIBUTE', className: 'Cliente', attributeName: 'nombre', attributeType: 'String' }
+    ]));
+
+    app.processVoiceTranscript('crea Cliente con nombre');
+    expect(app.aiCommandsPreview.length).toBe(2);
+
+    app.cancelVoiceCommand();
+
+    expect(app.aiCommandsPreview).toEqual([]);
+    expect(umlServiceSpy.createClass).not.toHaveBeenCalled();
+    expect(umlServiceSpy.addAttribute).not.toHaveBeenCalled();
+  });
+
+  it('executes an AI batch sequentially with the returned model version', fakeAsync(() => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    app.currentVersion = 3;
+    app.aiCommandsPreview = [
+      { type: 'CREATE_CLASS', className: 'Cliente' },
+      { type: 'ADD_ATTRIBUTE', className: 'Cliente', attributeName: 'nombre', attributeType: 'String' }
+    ];
+    umlServiceSpy.createClass.and.returnValue(of({ classId: 'c2', className: 'Cliente', modelVersion: 4 } as any));
+    umlServiceSpy.addAttribute.and.returnValue(of({
+      attribute: { id: 'a1', name: 'nombre', type: 'String' }, modelVersion: 5
+    } as any));
+
+    app.executeAiCommandsBatch();
+    tick(50);
+    tick(50);
+    flushMicrotasks();
+
+    expect(umlServiceSpy.createClass.calls.mostRecent().args[1].expectedVersion).toBe(3);
+    expect(umlServiceSpy.addAttribute.calls.mostRecent().args[2].expectedVersion).toBe(4);
+    expect(app.currentVersion).toBe(5);
+  }));
+
+  it('stops an AI batch on 409 and resynchronizes the model', fakeAsync(() => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    app.aiCommandsPreview = [
+      { type: 'CREATE_CLASS', className: 'Cliente' },
+      { type: 'CREATE_CLASS', className: 'Pedido' }
+    ];
+    umlServiceSpy.createClass.and.returnValue(throwError(() => ({ status: 409 })));
+    umlServiceSpy.getModel.and.returnValue(makeModelSnapshot(8));
+
+    app.executeAiCommandsBatch();
+    flushMicrotasks();
+
+    expect(umlServiceSpy.createClass).toHaveBeenCalledTimes(1);
+    expect(umlServiceSpy.getModel).toHaveBeenCalled();
+    expect(app.voiceError).toContain('Conflicto');
+  }));
+
+  it('reports an unavailable AI provider without breaking deterministic parsing', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    umlServiceSpy.interpretNaturalLanguage.and.returnValue(
+      throwError(() => ({ error: { error: 'Proveedor no disponible' } }))
+    );
+
+    app.processVoiceTranscript('necesito una clase');
+    expect(app.voiceError).toContain('Proveedor no disponible');
+
+    app.processVoiceTranscript('crear clase Producto');
+    expect(app.voiceCommandPreview?.type).toBe(VoiceCommandType.CREATE_CLASS);
+  });
 });

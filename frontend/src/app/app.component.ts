@@ -35,8 +35,12 @@ export class AppComponent implements OnInit, OnDestroy {
   isVoiceSupported = false;
   isListening = false;
   voiceTranscript = '';
+  naturalLanguageText = '';
   voiceError = '';
   voiceCommandPreview: VoiceCommand | null = null;
+  aiCommandsPreview: import('./services/uml.service').InterpretedUmlCommand[] = [];
+  isProcessingAi = false;
+  isExecutingAiBatch = false;
   private voiceParser = new VoiceCommandParser();
 
   // Buffer de eventos que llegan antes de que el GET snapshot termine
@@ -1182,13 +1186,39 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   processVoiceTranscript(transcript: string): void {
+    if (!transcript.trim()) return;
+    this.voiceTranscript = transcript;
+    this.aiCommandsPreview = [];
     const cmd = this.voiceParser.parse(transcript);
-    this.voiceCommandPreview = cmd;
+
     if (cmd.type === VoiceCommandType.UNKNOWN) {
-      this.voiceError = cmd.error || 'Comando no reconocido';
+      // Fallback to AI interpretation
+      this.voiceCommandPreview = null;
+      this.isProcessingAi = true;
+      this.voiceError = '';
+
+      this.umlService.interpretNaturalLanguage(this.projectId, transcript).subscribe({
+        next: (cmds) => {
+          this.isProcessingAi = false;
+          if (cmds && cmds.length > 0) {
+            this.aiCommandsPreview = cmds;
+          } else {
+            this.voiceError = 'La IA no pudo entender el comando.';
+          }
+        },
+        error: (err) => {
+          this.isProcessingAi = false;
+          this.voiceError = 'Error de IA: ' + (err.error?.error || err.message);
+        }
+      });
     } else {
+      this.voiceCommandPreview = cmd;
       this.voiceError = '';
     }
+  }
+
+  interpretNaturalLanguageText(): void {
+    this.processVoiceTranscript(this.naturalLanguageText);
   }
 
   getVoiceActionName(type: VoiceCommandType): string {
@@ -1205,8 +1235,152 @@ export class AppComponent implements OnInit, OnDestroy {
 
   cancelVoiceCommand(): void {
     this.voiceCommandPreview = null;
+    this.aiCommandsPreview = [];
     this.voiceTranscript = '';
     this.voiceError = '';
+  }
+
+  getAiActionName(type: string): string {
+    switch (type) {
+      case 'CREATE_CLASS': return 'Crear clase';
+      case 'RENAME_CLASS': return 'Renombrar clase';
+      case 'ADD_ATTRIBUTE': return 'Añadir atributo';
+      case 'ADD_OPERATION': return 'Añadir operación';
+      case 'ADD_RELATIONSHIP': return 'Añadir relación';
+      default: return type;
+    }
+  }
+
+  async executeAiCommandsBatch(): Promise<void> {
+    if (this.aiCommandsPreview.length === 0) return;
+    this.isExecutingAiBatch = true;
+    this.voiceError = '';
+
+    const cmds = [...this.aiCommandsPreview];
+
+    // Convert to Promise-based execution to wait for updates
+    const executeCmd = (cmd: import('./services/uml.service').InterpretedUmlCommand): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        const resolveClass = (name?: string) => {
+          if (!name) return null;
+          const lower = name.toLowerCase();
+          const matched = this.classes.filter(c => c.name.toLowerCase() === lower);
+          if (matched.length === 1) return matched[0];
+          return undefined;
+        };
+
+        const handleResult = (
+          obs: import('rxjs').Observable<any>,
+          afterSuccess?: (response: any) => void
+        ) => {
+          obs.subscribe({
+            next: (response) => {
+              if (response && response.modelVersion) {
+                this.currentVersion = Math.max(this.currentVersion, response.modelVersion);
+              }
+              afterSuccess?.(response);
+              // Allow event loop to process WebSocket updates
+              setTimeout(resolve, 50);
+            },
+            error: (err) => reject(err)
+          });
+        };
+
+        switch (cmd.type) {
+          case 'CREATE_CLASS':
+            handleResult(this.umlService.createClass(this.projectId, {
+              commandId: uuidv4(),
+              participantId: 'browser-A',
+              expectedVersion: this.currentVersion,
+              name: cmd.className!
+            }),
+              (response) => this.upsertClass({
+                id: response.classId,
+                name: response.className || cmd.className!,
+                attributes: [],
+                operations: []
+              }));
+            break;
+
+          case 'RENAME_CLASS':
+            const clsR = resolveClass(cmd.className);
+            if (!clsR) return reject(new Error(`Clase ${cmd.className} no encontrada`));
+            handleResult(this.umlService.renameClass(this.projectId, clsR.id, {
+              commandId: uuidv4(),
+              participantId: 'browser-A',
+              expectedVersion: this.currentVersion,
+              newName: cmd.newClassName!
+            }));
+            break;
+
+          case 'ADD_ATTRIBUTE':
+            const clsA = resolveClass(cmd.className);
+            if (!clsA) return reject(new Error(`Clase ${cmd.className} no encontrada`));
+            handleResult(this.umlService.addAttribute(this.projectId, clsA.id, {
+              commandId: uuidv4(),
+              participantId: 'browser-A',
+              expectedVersion: this.currentVersion,
+              attributeName: cmd.attributeName!,
+              attributeType: cmd.attributeType! || 'String',
+              visibility: 'PRIVATE'
+            }));
+            break;
+
+          case 'ADD_OPERATION':
+            const clsO = resolveClass(cmd.className);
+            if (!clsO) return reject(new Error(`Clase ${cmd.className} no encontrada`));
+            handleResult(this.umlService.addOperation(this.projectId, clsO.id, {
+              commandId: uuidv4(),
+              participantId: 'browser-A',
+              expectedVersion: this.currentVersion,
+              name: cmd.operationName!,
+              returnType: 'void',
+              visibility: 'PUBLIC',
+              parameters: []
+            }));
+            break;
+
+          case 'ADD_RELATIONSHIP':
+            const src = resolveClass(cmd.sourceClass);
+            const tgt = resolveClass(cmd.targetClass);
+            if (!src || !tgt) return reject(new Error(`Clases para relación no encontradas`));
+            handleResult(this.umlService.addRelationship(this.projectId, {
+              commandId: uuidv4(),
+              participantId: 'browser-A',
+              expectedVersion: this.currentVersion,
+              type: cmd.relationshipType!,
+              sourceClassId: src.id,
+              targetClassId: tgt.id,
+              sourceMultiplicity: cmd.sourceMultiplicity || '',
+              targetMultiplicity: cmd.targetMultiplicity || ''
+            }));
+            break;
+
+          default:
+            resolve();
+        }
+      });
+    };
+
+    for (let i = 0; i < cmds.length; i++) {
+      try {
+        await executeCmd(cmds[i]);
+      } catch (err: any) {
+        if (err.status === 409) {
+          this.voiceError = `Conflicto en el paso ${i + 1}. Resincronizando...`;
+          this.loadModel();
+        } else {
+          this.voiceError = `Error en el paso ${i + 1}: ${err.error?.error || err.message}`;
+        }
+        break; // Detener lote en caso de error
+      }
+    }
+
+    // Solo si no hubo error bloqueante, limpiamos:
+    if (!this.voiceError) {
+      this.cancelVoiceCommand();
+    }
+    this.isExecutingAiBatch = false;
   }
 
   executeVoiceCommand(): void {
@@ -1243,7 +1417,7 @@ export class AppComponent implements OnInit, OnDestroy {
         break;
 
       case VoiceCommandType.REMOVE_CLASS:
-        this.voiceError = 'Operación de eliminar clase aún no implementada en UI manual (esperando refactor).';
+        this.voiceError = 'Operación de eliminar clase: No disponible todavía.';
         return;
 
       case VoiceCommandType.ADD_ATTRIBUTE:

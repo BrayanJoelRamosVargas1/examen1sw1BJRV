@@ -222,6 +222,20 @@ export interface GetDiagramLayoutResponse {
   nodeViews: NodeViewDto[];
 }
 
+export interface InterpretedUmlCommand {
+  type: string;
+  className?: string;
+  newClassName?: string;
+  attributeName?: string;
+  attributeType?: string;
+  operationName?: string;
+  relationshipType?: string;
+  sourceClass?: string;
+  targetClass?: string;
+  sourceMultiplicity?: string;
+  targetMultiplicity?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UmlService {
   constructor(private http: HttpClient) {}
@@ -409,5 +423,12 @@ export class UmlService {
     formData.append('expectedVersion', expectedVersion.toString());
 
     return this.http.post(`${API}/projects/${projectId}/import/xmi`, formData);
+  }
+
+  interpretNaturalLanguage(projectId: string, text: string): Observable<InterpretedUmlCommand[]> {
+    return this.http.post<InterpretedUmlCommand[]>(
+      `${API}/projects/${projectId}/ai/interpret`,
+      { text }
+    );
   }
 }
